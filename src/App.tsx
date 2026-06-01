@@ -4,16 +4,10 @@ import {
   type CharacterStats,
   type EquippableItem,
   type TerrainStats,
-  calculateAccuracy,
-  calculateEvasiveness,
-  calculateAttackPower,
-  calculateDefensePower,
-  calculatePhysicalResistance,
   type WeaponStats,
 } from "./utils/combat"
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
@@ -27,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "./components/ui/label"
+import { AttackPredictionCard } from "./components/AttackPredictionCard"
 
 const defaultAttacker: CharacterStats = {
   name: "Sara",
@@ -64,18 +59,84 @@ const TERRAINS: TerrainStats[] = [
 
 const WEAPONS_ARSENAL: (WeaponStats | null)[] = [
   null, // Represents "Unarmed"
-  { name: "Mini Dagger", strength: 12, weight: 3, type: "weapon", iconName: "mini" },
-  { name: "Short Sword", strength: 15, weight: 7, type: "weapon", iconName: "short" },
-  { name: "Balder Dagger", strength: 25, weight: 24, type: "weapon", iconName: "balderkn" },
-  { name: "Balder Sword", strength: 30, weight: 31, type: "weapon", iconName: "baldersd" },
-  { name: "Flanka Axe", strength: 16, weight: 8, type: "weapon", iconName: "phlanka" },
+  {
+    name: "Mini Dagger",
+    strength: 12,
+    weight: 3,
+    type: "weapon",
+    iconName: "mini",
+  },
+  {
+    name: "Short Sword",
+    strength: 15,
+    weight: 7,
+    type: "weapon",
+    iconName: "short",
+  },
+  {
+    name: "Balder Dagger",
+    strength: 25,
+    weight: 24,
+    type: "weapon",
+    iconName: "balderkn",
+  },
+  {
+    name: "Balder Sword",
+    strength: 30,
+    weight: 31,
+    type: "weapon",
+    iconName: "baldersd",
+  },
+  {
+    name: "Flanka Axe",
+    strength: 16,
+    weight: 8,
+    type: "weapon",
+    iconName: "phlanka",
+  },
   { name: "Spear", strength: 12, weight: 9, type: "weapon", iconName: "spear" },
-  { name: "Slender Spear", strength: 22, weight: 23, type: "weapon", iconName: "slender" },
-  { name: "Heavy Hammer", strength: 18, weight: 14, type: "weapon", iconName: "heavyhm" },
-  { name: "Matou Claw", strength: 24, weight: 21, type: "weapon", iconName: "matou" },
-  { name: "Cedar Staff", strength: 6, weight: 2, type: "weapon", iconName: "cedar" },
-  { name: "Balder Staff", strength: 7, weight: 7, type: "weapon", iconName: "balderst" },
-  { name: "Guard Whip", strength: 7, weight: 7, type: "weapon", iconName: "guardwh" },
+  {
+    name: "Slender Spear",
+    strength: 22,
+    weight: 23,
+    type: "weapon",
+    iconName: "slender",
+  },
+  {
+    name: "Heavy Hammer",
+    strength: 18,
+    weight: 14,
+    type: "weapon",
+    iconName: "heavyhm",
+  },
+  {
+    name: "Matou Claw",
+    strength: 24,
+    weight: 21,
+    type: "weapon",
+    iconName: "matou",
+  },
+  {
+    name: "Cedar Staff",
+    strength: 6,
+    weight: 2,
+    type: "weapon",
+    iconName: "cedar",
+  },
+  {
+    name: "Balder Staff",
+    strength: 7,
+    weight: 7,
+    type: "weapon",
+    iconName: "balderst",
+  },
+  {
+    name: "Guard Whip",
+    strength: 7,
+    weight: 7,
+    type: "weapon",
+    iconName: "guardwh",
+  },
 ]
 
 type AttackDirection = "front" | "side" | "back"
@@ -87,8 +148,12 @@ const DIRECTION_MODIFIERS: Record<AttackDirection, number> = {
 
 export function App() {
   const [attacker, setAttacker] = useState<CharacterStats>(defaultAttacker)
-  const [attackerItems, setAttackerItems] = useState<(EquippableItem | null)[]>([WEAPONS_ARSENAL[2], null, null, null])
-  const [defenderItems, setDefenderItems] = useState<(EquippableItem | null)[]>([null, null, null, null])
+  const [attackerItems, setAttackerItems] = useState<(EquippableItem | null)[]>(
+    [WEAPONS_ARSENAL[2], null, null, null]
+  )
+  const [defenderItems, setDefenderItems] = useState<(EquippableItem | null)[]>(
+    [null, null, null, null]
+  )
   const [defender, setDefender] = useState<CharacterStats>(defaultDefender)
   const [direction, setDirection] = useState<AttackDirection>("front")
   const [attackerTerrain, setAttackerTerrain] = useState<TerrainStats>(
@@ -98,48 +163,11 @@ export function App() {
     TERRAINS[0]
   )
 
-  const [equippedWeapon, setEquippedWeapon] = useState<WeaponStats | null>(null)
-
-  const attackerGear: EquippableItem[] = equippedWeapon ? [equippedWeapon] : []
-  const defenderGear: EquippableItem[] = []
-
-  const attackerAccuracy = calculateAccuracy(attacker, attackerGear)
-  const defenderEvasiveness = calculateEvasiveness(defender, defenderGear)
+  const attackerWeapons = attackerItems.filter(
+    (item): item is WeaponStats => item?.type === "weapon"
+  )
 
   const sideModifier = DIRECTION_MODIFIERS[direction]
-
-  const attackCorrection = 50 + attackerTerrain.attackModifier
-  const defenseCorrection = 50 + defenderTerrain.defenseModifier
-
-  const weaponMultiplier = equippedWeapon ? 1.0 : 0.5
-
-  const finalHitChance =
-    Math.floor((attackerAccuracy * attackCorrection) / 100) -
-    Math.floor((defenderEvasiveness * defenseCorrection) / 100) +
-    attacker.luck -
-    defender.luck +
-    50 +
-    sideModifier
-
-  const attackPower = calculateAttackPower(attacker, equippedWeapon)
-  const defensePower = calculateDefensePower(defender)
-  const defenderPhysicalResistance = calculatePhysicalResistance(
-    defender,
-    defenderGear
-  )
-
-  // Basic attack damage vs base defense check
-  const baseDamage = Math.floor(
-    Math.floor((attackPower * attackCorrection) / 100) -
-      Math.floor(
-        (Math.floor((defensePower * defenseCorrection) / 100) *
-          defenderPhysicalResistance) /
-          100
-      )
-  )
-  const finalDamage = Math.round(
-    (baseDamage + attacker.luck - defender.luck) * weaponMultiplier
-  )
 
   return (
     <div className="container mx-auto min-h-screen max-w-400 space-y-6 px-4 py-8">
@@ -218,34 +246,6 @@ export function App() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-muted-foreground uppercase">
-                    Attacker Weapon
-                  </Label>
-                  <Select
-                    value={equippedWeapon ? equippedWeapon.name : "unarmed"}
-                    onValueChange={(name) => {
-                      const found = WEAPONS_ARSENAL.find(
-                        (w) => w?.name === name
-                      )
-                      setEquippedWeapon(found || null)
-                    }}
-                  >
-                    <SelectTrigger className="bg-background font-medium">
-                      <SelectValue placeholder="Unarmed (Fists)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unarmed">
-                        🥊 Unarmed (Fists)
-                      </SelectItem>
-                      {WEAPONS_ARSENAL.filter(Boolean).map((w) => (
-                        <SelectItem key={w!.name} value={w!.name}>
-                          ⚔️ {w!.name} (+{w!.strength} STR)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-muted-foreground uppercase">
                     Defender Terrain
                   </Label>
                   <Select
@@ -268,62 +268,32 @@ export function App() {
                 </div>
               </div>
             </CardHeader>
-
-            <CardContent className="grid grid-cols-2 gap-6 pt-2">
-              <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-4 shadow-sm">
-                <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Estimated Damage
-                </span>
-                <span className="mt-1 text-4xl font-black text-destructive">
-                  {finalDamage}
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-4 shadow-sm">
-                <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Net Hit Chance
-                </span>
-                <span className="mt-1 text-4xl font-black text-amber-500">
-                  {finalHitChance}%
-                </span>
-                <span className="mt-1 text-center text-[10px] text-muted-foreground">
-                  Attacker Hit minus Defender Evasion
-                </span>
-              </div>
-            </CardContent>
+            {attackerWeapons.length === 0 ? (
+              <AttackPredictionCard
+                attacker={attacker}
+                attackerItems={attackerItems}
+                defender={defender}
+                defenderItems={defenderItems}
+                attackerTerrain={attackerTerrain}
+                defenderTerrain={defenderTerrain}
+                weapon={null}
+                sideModifier={sideModifier}
+              />
+            ) : (
+              attackerWeapons.map((weapon) => (
+                <AttackPredictionCard
+                  attacker={attacker}
+                  attackerItems={attackerItems}
+                  defender={defender}
+                  defenderItems={defenderItems}
+                  attackerTerrain={attackerTerrain}
+                  defenderTerrain={defenderTerrain}
+                  weapon={weapon}
+                  sideModifier={sideModifier}
+                />
+              ))
+            )}
           </Card>
-
-          {/* Helpful Sub-Metrics Summary Box */}
-          <div className="grid grid-cols-2 gap-4 px-2 text-xs text-muted-foreground">
-            <div className="grid grid-rows-2 gap-2">
-              <div>
-                • Base Accuracy:{" "}
-                <span className="font-semibold text-foreground">
-                  {attackerAccuracy}
-                </span>
-              </div>
-              <div>
-                • Base Attack Power:{" "}
-                <span className="font-semibold text-foreground">
-                  {attackPower}
-                </span>
-              </div>
-            </div>
-            <div className="grid grid-rows-2 gap-2 text-right">
-              <div>
-                • Base Evasiveness:{" "}
-                <span className="font-semibold text-foreground">
-                  {defenderEvasiveness}
-                </span>
-              </div>
-              <div>
-                • Base Defense Power:{" "}
-                <span className="font-semibold text-foreground">
-                  {defensePower}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="space-y-2 lg:col-span-1">

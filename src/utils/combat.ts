@@ -39,14 +39,14 @@ export interface TerrainStats {
 }
 
 export function calculateEquipmentWeight(
-  equippedItems: EquippableItem[]
+  equippedItems: (EquippableItem | null)[]
 ): number {
-  return equippedItems.reduce((total, item) => total + item.weight, 0)
+  return equippedItems.reduce((total, item) => total + (item?.weight || 0), 0)
 }
 
 export function calculateAccuracy(
   character: CharacterStats,
-  equippedItems: EquippableItem[]
+  equippedItems: (EquippableItem | null)[]
 ): number {
   const baseHit = character.agility + Math.floor(character.dexterity / 4)
   const totalWeight = calculateEquipmentWeight(equippedItems)
@@ -55,7 +55,7 @@ export function calculateAccuracy(
 
 export function calculateEvasiveness(
   character: CharacterStats,
-  equippedItems: EquippableItem[]
+  equippedItems: (EquippableItem | null)[]
 ): number {
   const baseEvasion = character.agility + Math.floor(character.dexterity / 4)
   const totalWeight = calculateEquipmentWeight(equippedItems)
@@ -80,23 +80,23 @@ export function calculateDefensePower(character: CharacterStats): number {
 
 export function calculatePhysicalResistance(
   character: CharacterStats,
-  equippedItems: EquippableItem[]
+  equippedItems: (EquippableItem | null)[]
 ): number {
   const equippedArmor: ArmorStats[] = equippedItems.filter(
-    (item): item is ArmorStats => item.type == "armor"
+    (item): item is ArmorStats => item?.type == "armor"
   )
 
   const armorPhysicalResistance = equippedArmor.reduce(
-    (total, armor) => total + armor.physicalResistance,
+    (total, armor) => total - armor.physicalResistance,
     0
   )
 
   return character.physicalResistance - armorPhysicalResistance
 }
 
-export function getWeapons(equippedItems: EquippableItem[]): WeaponStats[] {
+export function getWeapons(equippedItems: (EquippableItem | null)[]): WeaponStats[] {
   const weapons: WeaponStats[] = equippedItems.filter(
-    (item): item is WeaponStats => item.type == "weapon"
+    (item): item is WeaponStats => item?.type == "weapon"
   )
   return weapons
 }
