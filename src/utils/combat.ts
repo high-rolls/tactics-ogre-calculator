@@ -15,6 +15,7 @@ export interface EquippableItem {
   name: string
   weight: number
   type: "weapon" | "armor" | "consumable"
+  iconName?: string
 }
 
 export interface WeaponStats extends EquippableItem {
@@ -91,4 +92,11 @@ export function calculatePhysicalResistance(
   )
 
   return character.physicalResistance - armorPhysicalResistance
+}
+
+export function getWeapons(equippedItems: EquippableItem[]): WeaponStats[] {
+  const weapons: WeaponStats[] = equippedItems.filter(
+    (item): item is WeaponStats => item.type == "weapon"
+  )
+  return weapons
 }

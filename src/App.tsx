@@ -64,18 +64,18 @@ const TERRAINS: TerrainStats[] = [
 
 const WEAPONS_ARSENAL: (WeaponStats | null)[] = [
   null, // Represents "Unarmed"
-  { name: "Mini Dagger", strength: 12, weight: 3, type: "weapon" },
-  { name: "Short Sword", strength: 15, weight: 7, type: "weapon" },
-  { name: "Balder Dagger", strength: 25, weight: 24, type: "weapon" },
-  { name: "Balder Sword", strength: 30, weight: 31, type: "weapon" },
-  { name: "Flanka Axe", strength: 16, weight: 8, type: "weapon" },
-  { name: "Spear", strength: 12, weight: 9, type: "weapon" },
-  { name: "Slender Spear", strength: 22, weight: 23, type: "weapon" },
-  { name: "Heavy Hammer", strength: 18, weight: 14, type: "weapon" },
-  { name: "Matou Claw", strength: 24, weight: 21, type: "weapon" },
-  { name: "Cedar Staff", strength: 6, weight: 2, type: "weapon" },
-  { name: "Balder Staff", strength: 7, weight: 7, type: "weapon" },
-  { name: "Guard Whip", strength: 7, weight: 7, type: "weapon" },
+  { name: "Mini Dagger", strength: 12, weight: 3, type: "weapon", iconName: "mini" },
+  { name: "Short Sword", strength: 15, weight: 7, type: "weapon", iconName: "short" },
+  { name: "Balder Dagger", strength: 25, weight: 24, type: "weapon", iconName: "balderkn" },
+  { name: "Balder Sword", strength: 30, weight: 31, type: "weapon", iconName: "baldersd" },
+  { name: "Flanka Axe", strength: 16, weight: 8, type: "weapon", iconName: "phlanka" },
+  { name: "Spear", strength: 12, weight: 9, type: "weapon", iconName: "spear" },
+  { name: "Slender Spear", strength: 22, weight: 23, type: "weapon", iconName: "slender" },
+  { name: "Heavy Hammer", strength: 18, weight: 14, type: "weapon", iconName: "heavyhm" },
+  { name: "Matou Claw", strength: 24, weight: 21, type: "weapon", iconName: "matou" },
+  { name: "Cedar Staff", strength: 6, weight: 2, type: "weapon", iconName: "cedar" },
+  { name: "Balder Staff", strength: 7, weight: 7, type: "weapon", iconName: "balderst" },
+  { name: "Guard Whip", strength: 7, weight: 7, type: "weapon", iconName: "guardwh" },
 ]
 
 type AttackDirection = "front" | "side" | "back"
@@ -87,6 +87,8 @@ const DIRECTION_MODIFIERS: Record<AttackDirection, number> = {
 
 export function App() {
   const [attacker, setAttacker] = useState<CharacterStats>(defaultAttacker)
+  const [attackerItems, setAttackerItems] = useState<(EquippableItem | null)[]>([WEAPONS_ARSENAL[2], null, null, null])
+  const [defenderItems, setDefenderItems] = useState<(EquippableItem | null)[]>([null, null, null, null])
   const [defender, setDefender] = useState<CharacterStats>(defaultDefender)
   const [direction, setDirection] = useState<AttackDirection>("front")
   const [attackerTerrain, setAttackerTerrain] = useState<TerrainStats>(
@@ -157,8 +159,10 @@ export function App() {
             ⚔️ Attacker Profile
           </div>
           <CharacterCard
-            initialCharacter={attacker}
+            character={attacker}
             onCharacterChange={(updated) => setAttacker(updated)}
+            equippedItems={attackerItems}
+            onEquippedItemsChange={(updated) => setAttackerItems(updated)}
           />
         </div>
 
@@ -327,8 +331,10 @@ export function App() {
             🛡️ Defender Profile
           </div>
           <CharacterCard
-            initialCharacter={defender}
+            character={defender}
             onCharacterChange={(updated) => setDefender(updated)}
+            equippedItems={defenderItems}
+            onEquippedItemsChange={(updated) => setDefenderItems(updated)}
           />
         </div>
       </main>
