@@ -29,7 +29,23 @@ import {
   NumberFieldInput,
   NumberFieldScrubArea,
 } from "@/components/reui/number-field"
-import { type CharacterStats, type EquippableItem } from "@/utils/combat" // Assuming types are located here
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  type AlignmentType,
+  type CharacterStats,
+  type ElementType,
+  type EquippableItem,
+  ALIGNMENTS,
+  CHARACTER_ALLOWED_ELEMENTS,
+  CLASS_CATALOG,
+} from "@/utils/combat" // Assuming types are located here
 import { useState } from "react"
 import { ITEM_CATALOG } from "@/utils/itemsMock"
 
@@ -75,6 +91,21 @@ export function CharacterCard({
     setSearchTerm("")
   }
 
+  const handleClassChange = (newClassName: string) => {
+    const selectedClass = CLASS_CATALOG[newClassName]
+    if (!selectedClass || !onCharacterChange) return
+
+    const updatedCharacter = {
+      ...character,
+      className: newClassName,
+      weatherResistance: selectedClass.weatherResistance,
+      physicalResistance: selectedClass.physicalResistance,
+      baseResistances: { ...selectedClass.baseResistances },
+    }
+
+    onCharacterChange(updatedCharacter)
+  }
+
   // List of attributes to loop through for the grid (excluding non-number fields)
   const numericAttributes: { key: keyof CharacterStats; label: string }[] = [
     { key: "level", label: "Level" },
@@ -107,19 +138,99 @@ export function CharacterCard({
       <Card className="mx-auto w-full max-w-sm shadow-md">
         {/* Editable Header */}
         <CardHeader className="space-y-1 border-b pb-4">
-          <Label
-            htmlFor="char-name"
-            className="text-xs tracking-wider text-muted-foreground uppercase"
-          >
-            Character Name
-          </Label>
-          <Input
-            id="char-name"
-            value={character.name}
-            onChange={(e) => updateAttribute("name", e.target.value)}
-            className="h-auto border-none bg-transparent p-0 text-2xl font-bold shadow-none focus-visible:ring-1 focus-visible:ring-ring"
-            placeholder="Enter character name..."
-          />
+          <div className="grid grid-cols-2 gap-4 pt-2">
+            <div>
+              <Label
+                className="text-xs tracking-wider text-muted-foreground uppercase"
+              >
+                Character Name
+              </Label>
+              <Input
+                value={character.name}
+                onChange={(e) => updateAttribute("name", e.target.value)}
+                placeholder="Enter character name..."
+              />
+            </div>
+            <div className="flex flex-col">
+              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                Class Tier
+              </Label>
+              <Select
+                value={character.className}
+                onValueChange={(newClassName) =>
+                  handleClassChange(newClassName)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Class" />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  <SelectGroup>
+                    {Object.entries(CLASS_CATALOG).map(([key, value]) => (
+                      <SelectItem value={key}>{value.name}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col">
+              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                Affinity Element
+              </Label>
+              <Select
+                value={character.element}
+                onValueChange={(val) =>
+                  updateAttribute("element", val as ElementType)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {CHARACTER_ALLOWED_ELEMENTS.map((el) => (
+                      <SelectItem
+                        key={el.key}
+                        value={el.key}
+                        className="text-xs"
+                      >
+                        {el.icon} {el.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col">
+              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                Moral Alignment
+              </Label>
+              <Select
+                value={character.alignment}
+                onValueChange={(val) =>
+                  updateAttribute("alignment", val as AlignmentType)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {ALIGNMENTS.map((al) => (
+                      <SelectItem
+                        key={al.key}
+                        value={al.key}
+                        className="text-xs"
+                      >
+                        {al.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
 
         {/* Attributes Grid */}
@@ -143,9 +254,7 @@ export function CharacterCard({
               </div>
             ))}
           </div>
-          <h2
-            className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase"
-          >
+          <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
             Inventory
           </h2>
           <div className="flex flex-col gap-y-2">
@@ -181,14 +290,13 @@ export function CharacterCard({
                           <ItemTitle>{item.name}</ItemTitle>
                           <ItemDescription>
                             Weight: {item.weight}
-
                             {item.type === "weapon" && "strength" in item && (
                               <> | Strength: +{item.strength}</>
                             )}
-
-                            {item.type === "armor" && "physicalResistance" in item && (
-                              <> | Armor: +{item.physicalResistance}</>
-                            )}
+                            {item.type === "armor" &&
+                              "physicalResistance" in item && (
+                                <> | Armor: +{item.physicalResistance}</>
+                              )}
                           </ItemDescription>
                         </ItemContent>
                       </a>

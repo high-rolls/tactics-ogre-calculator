@@ -2,12 +2,17 @@ import {
   calculateAccuracy,
   calculateAttackPower,
   calculateDefensePower,
+  calculateElementalMatchup,
   calculateEvasiveness,
+  calculateNetElementalResistance,
   calculatePhysicalResistance,
+  WEATHER_ALIGNMENT_MODIFIERS,
   type CharacterStats,
+  type ElementalModifiers,
   type EquippableItem,
   type TerrainStats,
   type WeaponStats,
+  type WeatherType,
 } from "@/utils/combat"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 
@@ -20,6 +25,7 @@ interface AttackPredictionCardProps {
   attackerTerrain: TerrainStats
   defenderTerrain: TerrainStats
   sideModifier: number
+  weather: WeatherType
 }
 
 export function AttackPredictionCard({
@@ -31,12 +37,54 @@ export function AttackPredictionCard({
   attackerTerrain,
   defenderTerrain,
   sideModifier,
+  weather,
 }: AttackPredictionCardProps) {
   const attackerAccuracy = calculateAccuracy(attacker, attackerItems)
   const defenderEvasiveness = calculateEvasiveness(defender, defenderItems)
 
-  const attackCorrection = 50 + attackerTerrain.attackModifier
-  const defenseCorrection = 50 + defenderTerrain.defenseModifier
+  const weaponElementModifier =
+    weapon?.element !== undefined
+      ? -10 * calculateElementalMatchup(weapon.element, attacker.element)
+      : 0
+
+  const attackerTerrainBonus =
+    attacker.element in attackerTerrain.elementalModifiers
+      ? attackerTerrain.elementalModifiers[
+          attacker.element as keyof ElementalModifiers
+        ] || 0
+      : 0
+
+  const attackCorrection = Math.max(
+    0,
+    Math.min(
+      200,
+      50 +
+        attackerTerrain.attackModifier +
+        WEATHER_ALIGNMENT_MODIFIERS[weather][attacker.alignment] +
+        attacker.weatherResistance +
+        attackerTerrainBonus +
+        weaponElementModifier
+    )
+  )
+
+  const defenderTerrainBonus =
+    defender.element in defenderTerrain.elementalModifiers
+      ? defenderTerrain.elementalModifiers[
+          defender.element as keyof ElementalModifiers
+        ] || 0
+      : 0
+
+  const defenseCorrection = Math.max(
+    0,
+    Math.min(
+      200,
+      50 +
+        defenderTerrain.defenseModifier +
+        WEATHER_ALIGNMENT_MODIFIERS[weather][defender.alignment] +
+        defenderTerrainBonus +
+        defender.weatherResistance
+    )
+  )
 
   const weaponMultiplier = weapon !== null ? 1.0 : 0.5
 
@@ -59,15 +107,22 @@ export function AttackPredictionCard({
     defender,
     defenderItems
   )
+  const defenderNetResistances = calculateNetElementalResistance(
+    defender,
+    defenderItems
+  )
+
+  const defenderResistance =
+    weapon?.element === undefined
+      ? defenderPhysicalResistance
+      : defenderNetResistances[weapon.element]
 
   // Basic attack damage vs base defense check
   const baseDamage = Math.floor(
-    Math.floor((attackPower * attackCorrection) / 100) -
-      Math.floor(
-        (Math.floor((defensePower * defenseCorrection) / 100) *
-          defenderPhysicalResistance) /
-          100
-      )
+    ((Math.floor((attackPower * attackCorrection) / 100) -
+      Math.floor((defensePower * defenseCorrection) / 100)) *
+      defenderResistance) /
+      100
   )
   const finalDamage = Math.max(
     1,
@@ -115,6 +170,12 @@ export function AttackPredictionCard({
                 {attackerAccuracy}
               </span>
             </div>
+            <div>
+              Attack Correction:{" "}
+              <span className="font-medium text-foreground">
+                {attackCorrection}%
+              </span>
+            </div>
           </div>
           <div className="space-y-0.5 border-l pl-3">
             <div className="font-semibold text-foreground">Defender Stats</div>
@@ -128,6 +189,12 @@ export function AttackPredictionCard({
               Evasiveness:{" "}
               <span className="font-medium text-foreground">
                 {defenderEvasiveness}
+              </span>
+            </div>
+            <div>
+              Defense Correction:{" "}
+              <span className="font-medium text-foreground">
+                {defenseCorrection}%
               </span>
             </div>
           </div>

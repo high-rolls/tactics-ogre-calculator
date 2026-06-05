@@ -1,10 +1,18 @@
 import { useState } from "react"
+import {
+  WiDaySunny,
+  WiCloudy,
+  WiSprinkle,
+  WiRain,
+  WiThunderstorm,
+} from "weather-icons-react"
 import { CharacterCard } from "./components/CharacterCard"
 import {
   type CharacterStats,
   type EquippableItem,
   type TerrainStats,
   type WeaponStats,
+  type WeatherType,
 } from "./utils/combat"
 import {
   Card,
@@ -26,6 +34,9 @@ import { AttackPredictionCard } from "./components/AttackPredictionCard"
 const defaultAttacker: CharacterStats = {
   name: "Sara",
   level: 17,
+  element: "air",
+  alignment: "neutral",
+  className: "cleric",
   strength: 102,
   vitality: 105,
   intelligence: 116,
@@ -33,12 +44,24 @@ const defaultAttacker: CharacterStats = {
   agility: 123,
   dexterity: 126,
   luck: 50,
-  physicalResistance: 115,
+  physicalResistance: 125,
+  baseResistances: {
+    air: 95,
+    fire: 95,
+    earth: 95,
+    water: 95,
+    holy: 90,
+    dark: 100,
+  },
+  weatherResistance: 2,
 }
 
 const defaultDefender: CharacterStats = {
   name: "Neilson",
   level: 17,
+  element: "air",
+  alignment: "chaotic",
+  className: "skeleton",
   strength: 116,
   vitality: 88,
   intelligence: 109,
@@ -46,96 +69,96 @@ const defaultDefender: CharacterStats = {
   agility: 130,
   dexterity: 106,
   luck: 50,
-  physicalResistance: 115,
+  physicalResistance: 110,
+  baseResistances: {
+    air: 100,
+    fire: 100,
+    earth: 100,
+    water: 100,
+    holy: 125,
+    dark: 75,
+  },
+  weatherResistance: 2,
 }
 
 const TERRAINS: TerrainStats[] = [
-  { name: "Grass", attackModifier: 35, defenseModifier: 15 },
-  { name: "Soil", attackModifier: 40, defenseModifier: 15 },
-  { name: "Road", attackModifier: 40, defenseModifier: 20 },
-  { name: "Stone Wall", attackModifier: 40, defenseModifier: 15 },
-  { name: "Water", attackModifier: 10, defenseModifier: 5 },
-]
-
-const WEAPONS_ARSENAL: (WeaponStats | null)[] = [
-  null, // Represents "Unarmed"
   {
-    name: "Mini Dagger",
-    strength: 12,
-    weight: 3,
-    type: "weapon",
-    iconName: "mini",
+    name: "Grass",
+    attackModifier: 35,
+    defenseModifier: 15,
+    elementalModifiers: {
+      water: 1,
+      earth: -2,
+      fire: -1,
+      air: 2,
+    },
   },
   {
-    name: "Short Sword",
-    strength: 15,
-    weight: 7,
-    type: "weapon",
-    iconName: "short",
+    name: "Gravel",
+    attackModifier: 35,
+    defenseModifier: 15,
+    elementalModifiers: {
+      water: 3,
+      earth: 2,
+      fire: 2,
+      air: -2,
+    },
   },
   {
-    name: "Balder Dagger",
-    strength: 25,
-    weight: 24,
-    type: "weapon",
-    iconName: "balderkn",
+    name: "River",
+    attackModifier: 15,
+    defenseModifier: 10,
+    elementalModifiers: {
+      water: 2,
+      earth: 0,
+      fire: -2,
+      air: 0,
+    },
   },
   {
-    name: "Balder Sword",
-    strength: 30,
-    weight: 31,
-    type: "weapon",
-    iconName: "baldersd",
+    name: "Road",
+    attackModifier: 40,
+    defenseModifier: 20,
+    elementalModifiers: {},
   },
   {
-    name: "Flanka Axe",
-    strength: 16,
-    weight: 8,
-    type: "weapon",
-    iconName: "phlanka",
-  },
-  { name: "Spear", strength: 12, weight: 9, type: "weapon", iconName: "spear" },
-  {
-    name: "Slender Spear",
-    strength: 22,
-    weight: 23,
-    type: "weapon",
-    iconName: "slender",
+    name: "Snow",
+    attackModifier: 25,
+    defenseModifier: 20,
+    elementalModifiers: {
+      water: 2,
+      earth: 0,
+      fire: -2,
+      air: 0,
+    },
   },
   {
-    name: "Heavy Hammer",
-    strength: 18,
-    weight: 14,
-    type: "weapon",
-    iconName: "heavyhm",
+    name: "Soil",
+    attackModifier: 40,
+    defenseModifier: 15,
+    elementalModifiers: {
+      water: 0,
+      earth: 2,
+      fire: 0,
+      air: -2,
+    },
   },
   {
-    name: "Matou Claw",
-    strength: 24,
-    weight: 21,
-    type: "weapon",
-    iconName: "matou",
+    name: "Stone Wall",
+    attackModifier: 40,
+    defenseModifier: 15,
+    elementalModifiers: {},
   },
   {
-    name: "Cedar Staff",
-    strength: 6,
-    weight: 2,
-    type: "weapon",
-    iconName: "cedar",
-  },
-  {
-    name: "Balder Staff",
-    strength: 7,
-    weight: 7,
-    type: "weapon",
-    iconName: "balderst",
-  },
-  {
-    name: "Guard Whip",
-    strength: 7,
-    weight: 7,
-    type: "weapon",
-    iconName: "guardwh",
+    name: "Water",
+    attackModifier: 10,
+    defenseModifier: 5,
+    elementalModifiers: {
+      water: 2,
+      earth: 0,
+      fire: -2,
+      air: 0,
+    },
   },
 ]
 
@@ -149,7 +172,7 @@ const DIRECTION_MODIFIERS: Record<AttackDirection, number> = {
 export function App() {
   const [attacker, setAttacker] = useState<CharacterStats>(defaultAttacker)
   const [attackerItems, setAttackerItems] = useState<(EquippableItem | null)[]>(
-    [WEAPONS_ARSENAL[2], null, null, null]
+    [null, null, null, null]
   )
   const [defenderItems, setDefenderItems] = useState<(EquippableItem | null)[]>(
     [null, null, null, null]
@@ -162,6 +185,7 @@ export function App() {
   const [defenderTerrain, setDefenderTerrain] = useState<TerrainStats>(
     TERRAINS[0]
   )
+  const [weather, setWeather] = useState<WeatherType>("sunny")
 
   const attackerWeapons = attackerItems.filter(
     (item): item is WeaponStats => item?.type === "weapon"
@@ -217,6 +241,41 @@ export function App() {
                     <TabsTrigger value="front">Front</TabsTrigger>
                     <TabsTrigger value="side">Side</TabsTrigger>
                     <TabsTrigger value="back">Back</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className="flex flex-col items-center justify-center space-y-2 pt-4">
+                <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                  Weather
+                </span>
+                <Tabs
+                  value={weather}
+                  onValueChange={(val) => setWeather(val as WeatherType)}
+                  className="w-full max-w-lg"
+                  orientation="horizontal"
+                >
+                  <TabsList className="w-full">
+                    <TabsTrigger value="sunny">
+                      <WiDaySunny className="text-amber-200" />
+                      Sunny
+                    </TabsTrigger>
+                    <TabsTrigger value="cloudy">
+                      <WiCloudy className="text-white" />
+                      Cloudy
+                    </TabsTrigger>
+                    <TabsTrigger value="light-rain">
+                      <WiSprinkle className="text-sky-200" />
+                      Light R/S
+                    </TabsTrigger>
+                    <TabsTrigger value="rain">
+                      <WiRain className="text-sky-400" />
+                      Rain/Snow
+                    </TabsTrigger>
+                    <TabsTrigger value="heavy-rain">
+                      <WiThunderstorm className="text-indigo-400" />
+                      Heavy R/S
+                    </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -278,6 +337,7 @@ export function App() {
                 defenderTerrain={defenderTerrain}
                 weapon={null}
                 sideModifier={sideModifier}
+                weather={weather}
               />
             ) : (
               attackerWeapons.map((weapon) => (
@@ -290,6 +350,7 @@ export function App() {
                   defenderTerrain={defenderTerrain}
                   weapon={weapon}
                   sideModifier={sideModifier}
+                  weather={weather}
                 />
               ))
             )}
