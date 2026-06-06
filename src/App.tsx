@@ -191,6 +191,11 @@ export function App() {
     (item): item is WeaponStats => item?.type === "weapon"
   )
 
+  const defenderPrimaryWeapon =
+    defenderItems.find(
+      (item): item is WeaponStats => item !== null && item.type === "weapon"
+    ) || null
+
   const sideModifier = DIRECTION_MODIFIERS[direction]
 
   return (
@@ -354,6 +359,22 @@ export function App() {
                 />
               ))
             )}
+
+            <div className="mx-3 pl-1 text-xs font-bold tracking-widest text-sky-500 uppercase">
+            🛡️ Counter Attack
+            </div>
+
+            <AttackPredictionCard
+              attacker={defender}
+              attackerItems={defenderItems}
+              defender={attacker}
+              defenderItems={attackerItems}
+              attackerTerrain={defenderTerrain}
+              defenderTerrain={attackerTerrain}
+              weapon={defenderPrimaryWeapon}
+              sideModifier={DIRECTION_MODIFIERS["front"]}
+              weather={weather}
+            />
           </Card>
         </div>
 

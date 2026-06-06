@@ -181,6 +181,19 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
       dark: 75,
     },
   },
+  siren: {
+    name: "Siren",
+    weatherResistance: 2,
+    physicalResistance: 120,
+    baseResistances: {
+      air: 100,
+      fire: 100,
+      earth: 100,
+      water: 100,
+      holy: 80,
+      dark: 80,
+    },
+  },
   soldier: {
     name: "Soldier",
     weatherResistance: 2,
@@ -194,6 +207,19 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
       dark: 100,
     },
   },
+  valkyrie: {
+    name: "Valkyrie",
+    weatherResistance: 4,
+    physicalResistance: 110,
+    baseResistances: {
+      air: 100,
+      fire: 100,
+      earth: 100,
+      water: 100,
+      holy: 95,
+      dark: 105,
+    },
+  },
 }
 
 export function calculateEquipmentWeight(
@@ -205,7 +231,7 @@ export function calculateAccuracy(
   character: CharacterStats,
   equippedItems: (EquippableItem | null)[]
 ): number {
-  const baseHit = character.agility + Math.floor(character.dexterity / 4)
+  const baseHit = character.agility + Math.round(character.dexterity / 4)
   const totalWeight = calculateEquipmentWeight(equippedItems)
   return baseHit - totalWeight
 }
@@ -214,7 +240,7 @@ export function calculateEvasiveness(
   character: CharacterStats,
   equippedItems: (EquippableItem | null)[]
 ): number {
-  const baseEvasion = character.agility + Math.floor(character.dexterity / 4)
+  const baseEvasion = character.agility + Math.round(character.dexterity / 4)
   const totalWeight = calculateEquipmentWeight(equippedItems)
 
   return baseEvasion - totalWeight
