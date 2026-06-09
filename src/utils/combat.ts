@@ -1,11 +1,36 @@
 export type ElementType = "air" | "earth" | "fire" | "water" | "holy" | "dark"
 export type AlignmentType = "lawful" | "neutral" | "chaotic"
+export type SpeciesType = "human" | "beast" | "dragon" | "giant" | "aquatic"
+export type GenderType = "male" | "female"
+export type MovementType =
+  | "fast"
+  | "fast-acrobatic"
+  | "slow"
+  | "on-water"
+  | "underwater"
+  | "lava"
+  | "float"
+  | "fly"
+  | "warp"
 export type WeatherType =
   | "sunny"
   | "cloudy"
   | "light-rain"
   | "rain"
   | "heavy-rain"
+export type ItemSlotType = "head" | "hands" | "body" | "feet" | "bag"
+export type WeaponCategoryType =
+  | "sword"
+  | "axe"
+  | "spear"
+  | "hammer"
+  | "claw"
+  | "fan"
+  | "staff"
+  | "whip"
+  | "gun"
+  | "bow"
+  | "crossbow"
 
 export interface ElementalResistances {
   air: number
@@ -17,18 +42,27 @@ export interface ElementalResistances {
 }
 
 export interface CharacterClass {
+  id: number
   name: string
+  species: SpeciesType
+  allowedGenders: GenderType[]
+  allowedAlignments: AlignmentType[]
   weatherResistance: 0 | 2 | 4
+  weightPenalty: number
+  preferredWeaponCategory?: WeaponCategoryType
+  movementTypes: MovementType[]
   physicalResistance: number
   baseResistances: ElementalResistances
 }
 
 export interface CharacterStats {
   name: string
-  level: number
+  species: SpeciesType
+  gender: GenderType
   element: ElementType
   alignment: AlignmentType
-  className: string
+  class: CharacterClass
+  level: number
   strength: number
   vitality: number
   intelligence: number
@@ -36,20 +70,33 @@ export interface CharacterStats {
   agility: number
   dexterity: number
   luck: number
-  physicalResistance: number
-  baseResistances: ElementalResistances
-  weatherResistance: 0 | 2 | 4
+}
+
+export interface StatModifiers {
+  strength?: number
+  vitality?: number
+  intelligence?: number
+  mentality?: number
+  agility?: number
+  dexterity?: number
+  luck?: number
 }
 
 export interface EquippableItem {
+  type: "weapon" | "armor" | "consumable"
   name: string
   weight: number
-  type: "weapon" | "armor" | "consumable"
   iconName?: string
+  slot: ItemSlotType
+  handsRequired: number
+  statModifiers?: StatModifiers
+  elementalResistances?: Partial<ElementalResistances>
 }
 
 export interface WeaponStats extends EquippableItem {
   type: "weapon"
+  slot: "hands"
+  category: WeaponCategoryType
   strength: number
   element?: ElementType
 }
@@ -57,11 +104,11 @@ export interface WeaponStats extends EquippableItem {
 export interface ArmorStats extends EquippableItem {
   type: "armor"
   physicalResistance: number
-  elementalResistances?: Partial<ElementalResistances>
 }
 
 export interface ConsumableStats extends EquippableItem {
   type: "consumable"
+  slot: "bag"
 }
 
 export interface ElementalModifiers {
@@ -109,6 +156,15 @@ export const WEATHER_ALIGNMENT_MODIFIERS: Record<
   },
 }
 
+export const SPECIES: { key: SpeciesType; label: string }[] = [
+  { key: "human", label: "Human" },
+]
+
+export const GENDERS: { key: GenderType; label: string }[] = [
+  { key: "male", label: "Male" },
+  { key: "female", label: "Female" },
+]
+
 export const ALIGNMENTS: { key: AlignmentType; label: string }[] = [
   { key: "lawful", label: "Lawful" },
   { key: "neutral", label: "Neutral" },
@@ -128,110 +184,41 @@ export const CHARACTER_ALLOWED_ELEMENTS = ELEMENTS.filter(
   (el) => el.key !== "holy" && el.key !== "dark"
 )
 
-export const CLASS_CATALOG: Record<string, CharacterClass> = {
-  archer: {
-    name: "Archer",
-    weatherResistance: 4,
-    physicalResistance: 110,
-    baseResistances: {
-      air: 100,
-      fire: 100,
-      earth: 100,
-      water: 100,
-      holy: 100,
-      dark: 95,
-    },
-  },
-  cleric: {
-    name: "Cleric",
-    weatherResistance: 2,
-    physicalResistance: 125,
-    baseResistances: {
-      air: 95,
-      fire: 95,
-      earth: 95,
-      water: 95,
-      holy: 90,
-      dark: 100,
-    },
-  },
-  ghost: {
-    name: "Ghost",
-    weatherResistance: 2,
-    physicalResistance: 65,
-    baseResistances: {
-      air: 110,
-      fire: 110,
-      earth: 110,
-      water: 110,
-      holy: 135,
-      dark: 85,
-    },
-  },
-  skeleton: {
-    name: "Skeleton",
-    weatherResistance: 2,
-    physicalResistance: 110,
-    baseResistances: {
-      air: 100,
-      fire: 100,
-      earth: 100,
-      water: 100,
-      holy: 125,
-      dark: 75,
-    },
-  },
-  siren: {
-    name: "Siren",
-    weatherResistance: 2,
-    physicalResistance: 120,
-    baseResistances: {
-      air: 100,
-      fire: 100,
-      earth: 100,
-      water: 100,
-      holy: 80,
-      dark: 80,
-    },
-  },
-  soldier: {
-    name: "Soldier",
-    weatherResistance: 2,
-    physicalResistance: 115,
-    baseResistances: {
-      air: 100,
-      fire: 100,
-      earth: 100,
-      water: 100,
-      holy: 100,
-      dark: 100,
-    },
-  },
-  valkyrie: {
-    name: "Valkyrie",
-    weatherResistance: 4,
-    physicalResistance: 110,
-    baseResistances: {
-      air: 100,
-      fire: 100,
-      earth: 100,
-      water: 100,
-      holy: 95,
-      dark: 105,
-    },
-  },
-}
-
 export function calculateEquipmentWeight(
   equippedItems: (EquippableItem | null)[]
 ): number {
   return equippedItems.reduce((total, item) => total + (item?.weight || 0), 0)
 }
+
+export function getAdjustedStats(
+  character: CharacterStats,
+  equippedItems: (EquippableItem | null)[]
+): CharacterStats {
+  const statKeys: (keyof StatModifiers)[] = [
+    "strength",
+    "vitality",
+    "intelligence",
+    "mentality",
+    "agility",
+    "dexterity",
+    "luck",
+  ]
+  const adjusted = { ...character }
+  statKeys.forEach((stat) => {
+    const totalStatModifier = equippedItems.reduce(
+      (total, item) => total + (item?.statModifiers?.[stat] || 0),
+      0
+    )
+    adjusted[stat] += totalStatModifier
+  })
+  return adjusted
+}
+
 export function calculateAccuracy(
   character: CharacterStats,
   equippedItems: (EquippableItem | null)[]
 ): number {
-  const baseHit = character.agility + Math.round(character.dexterity / 4)
+  const baseHit = character.agility + ((character.dexterity + 2) >> 2)
   const totalWeight = calculateEquipmentWeight(equippedItems)
   return baseHit - totalWeight
 }
@@ -240,9 +227,8 @@ export function calculateEvasiveness(
   character: CharacterStats,
   equippedItems: (EquippableItem | null)[]
 ): number {
-  const baseEvasion = character.agility + Math.round(character.dexterity / 4)
+  const baseEvasion = character.agility + ((character.dexterity + 2) >> 2)
   const totalWeight = calculateEquipmentWeight(equippedItems)
-
   return baseEvasion - totalWeight
 }
 
@@ -253,12 +239,20 @@ export function calculateAttackPower(
   return (
     character.strength +
     (equippedWeapon?.strength || 0) +
-    Math.floor(character.dexterity / 2)
+    ((character.dexterity + 1) >> 1)
   )
 }
 
+export function calculateMagicAttack(character: CharacterStats): number {
+  return character.intelligence + ((character.mentality + 1) >> 1)
+}
+
 export function calculateDefensePower(character: CharacterStats): number {
-  return character.vitality + Math.floor(character.strength / 2)
+  return character.vitality + ((character.strength + 1) >> 1)
+}
+
+export function calculateMagicDefense(character: CharacterStats): number {
+  return character.vitality + ((character.mentality + 1) >> 1)
 }
 
 export function calculatePhysicalResistance(
@@ -274,7 +268,7 @@ export function calculatePhysicalResistance(
     0
   )
 
-  return character.physicalResistance - armorPhysicalResistance
+  return character.class.physicalResistance - armorPhysicalResistance
 }
 
 export function getWeapons(
@@ -304,10 +298,6 @@ export function calculateNetElementalResistance(
   character: CharacterStats,
   equippedItems: (EquippableItem | null)[]
 ): ElementalResistances {
-  const equippedArmor = equippedItems.filter(
-    (item): item is ArmorStats => item?.type === "armor"
-  )
-
   const elements: (keyof ElementalResistances)[] = [
     "air",
     "earth",
@@ -320,11 +310,12 @@ export function calculateNetElementalResistance(
   const netResistances = {} as ElementalResistances
 
   elements.forEach((element) => {
-    const totalArmorRes = equippedArmor.reduce(
-      (total, armor) => total + (armor.elementalResistances?.[element] || 0),
+    const totalResistance = equippedItems.reduce(
+      (total, item) => total + (item?.elementalResistances?.[element] || 0),
       0
     )
-    netResistances[element] = character.baseResistances[element] - totalArmorRes
+    netResistances[element] =
+      character.class.baseResistances[element] - totalResistance
   })
 
   return netResistances

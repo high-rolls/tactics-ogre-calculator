@@ -6,6 +6,7 @@ import {
   calculateEvasiveness,
   calculateNetElementalResistance,
   calculatePhysicalResistance,
+  getAdjustedStats,
   WEATHER_ALIGNMENT_MODIFIERS,
   type CharacterStats,
   type ElementalModifiers,
@@ -26,6 +27,8 @@ interface AttackPredictionCardProps {
   defenderTerrain: TerrainStats
   sideModifier: number
   weather: WeatherType
+  attackCorrection: number
+  defenseCorrection: number
 }
 
 export function AttackPredictionCard({
@@ -39,20 +42,30 @@ export function AttackPredictionCard({
   sideModifier,
   weather,
 }: AttackPredictionCardProps) {
-  const attackerAccuracy = calculateAccuracy(attacker, attackerItems)
-  const defenderEvasiveness = calculateEvasiveness(defender, defenderItems)
+  const adjustedAttacker = getAdjustedStats(attacker, attackerItems)
+  const adjustedDefender = getAdjustedStats(defender, defenderItems)
+
+  const attackerAccuracy = calculateAccuracy(adjustedAttacker, attackerItems)
+  const defenderEvasiveness = calculateEvasiveness(
+    adjustedDefender,
+    defenderItems
+  )
 
   const weaponElementModifier =
     weapon?.element !== undefined
-      ? -10 * calculateElementalMatchup(weapon.element, attacker.element)
+      ? -10 *
+        calculateElementalMatchup(weapon.element, adjustedAttacker.element)
       : 0
 
   const attackerTerrainBonus =
-    attacker.element in attackerTerrain.elementalModifiers
+    adjustedAttacker.element in attackerTerrain.elementalModifiers
       ? attackerTerrain.elementalModifiers[
-          attacker.element as keyof ElementalModifiers
+          adjustedAttacker.element as keyof ElementalModifiers
         ] || 0
       : 0
+
+  const preferredWeaponBonus =
+    adjustedAttacker.class.preferredWeaponCategory === weapon?.category ? 3 : 0
 
   const attackCorrection = Math.max(
     0,
@@ -60,17 +73,18 @@ export function AttackPredictionCard({
       200,
       50 +
         attackerTerrain.attackModifier +
-        WEATHER_ALIGNMENT_MODIFIERS[weather][attacker.alignment] +
-        attacker.weatherResistance +
+        WEATHER_ALIGNMENT_MODIFIERS[weather][adjustedAttacker.alignment] +
+        adjustedAttacker.class.weatherResistance +
         attackerTerrainBonus +
-        weaponElementModifier
+        weaponElementModifier +
+        preferredWeaponBonus
     )
   )
 
   const defenderTerrainBonus =
-    defender.element in defenderTerrain.elementalModifiers
+    adjustedDefender.element in defenderTerrain.elementalModifiers
       ? defenderTerrain.elementalModifiers[
-          defender.element as keyof ElementalModifiers
+          adjustedDefender.element as keyof ElementalModifiers
         ] || 0
       : 0
 
@@ -80,9 +94,9 @@ export function AttackPredictionCard({
       200,
       50 +
         defenderTerrain.defenseModifier +
-        WEATHER_ALIGNMENT_MODIFIERS[weather][defender.alignment] +
+        WEATHER_ALIGNMENT_MODIFIERS[weather][adjustedDefender.alignment] +
         defenderTerrainBonus +
-        defender.weatherResistance
+        adjustedDefender.class.weatherResistance
     )
   )
 
@@ -92,23 +106,23 @@ export function AttackPredictionCard({
     0,
     Math.min(
       100,
-      Math.floor((attackerAccuracy * attackCorrection) / 100) -
-        Math.floor((defenderEvasiveness * defenseCorrection) / 100) +
-        attacker.luck -
-        defender.luck +
+      Math.trunc((attackerAccuracy * attackCorrection) / 100) -
+        Math.trunc((defenderEvasiveness * defenseCorrection) / 100) +
+        adjustedAttacker.luck -
+        adjustedDefender.luck +
         50 +
         sideModifier
     )
   )
 
-  const attackPower = calculateAttackPower(attacker, weapon)
-  const defensePower = calculateDefensePower(defender)
+  const attackPower = calculateAttackPower(adjustedAttacker, weapon)
+  const defensePower = calculateDefensePower(adjustedDefender)
   const defenderPhysicalResistance = calculatePhysicalResistance(
-    defender,
+    adjustedDefender,
     defenderItems
   )
   const defenderNetResistances = calculateNetElementalResistance(
-    defender,
+    adjustedDefender,
     defenderItems
   )
 
@@ -118,15 +132,18 @@ export function AttackPredictionCard({
       : defenderNetResistances[weapon.element]
 
   // Basic attack damage vs base defense check
-  const baseDamage = Math.floor(
-    ((Math.floor((attackPower * attackCorrection) / 100) -
-      Math.floor((defensePower * defenseCorrection) / 100)) *
+  const baseDamage = Math.trunc(
+    ((Math.trunc((attackPower * attackCorrection) / 100) -
+      Math.trunc((defensePower * defenseCorrection) / 100)) *
       defenderResistance) /
       100
   )
   const finalDamage = Math.max(
     1,
-    Math.round((baseDamage + attacker.luck - defender.luck) * weaponMultiplier)
+    Math.round(
+      (baseDamage + adjustedAttacker.luck - adjustedDefender.luck) *
+        weaponMultiplier
+    )
   )
 
   return (
@@ -195,6 +212,12 @@ export function AttackPredictionCard({
               Defense Correction:{" "}
               <span className="font-medium text-foreground">
                 {defenseCorrection}%
+              </span>
+            </div>
+            <div>
+              Defender Resistance:{" "}
+              <span className="font-medium text-foreground">
+                {defenderResistance}%
               </span>
             </div>
           </div>

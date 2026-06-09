@@ -1,26 +1,12 @@
-import { useState } from "react"
-import {
-  WiDaySunny,
-  WiCloudy,
-  WiSprinkle,
-  WiRain,
-  WiThunderstorm,
-} from "weather-icons-react"
-import { CharacterCard } from "./components/CharacterCard"
-import {
-  type CharacterStats,
-  type EquippableItem,
-  type TerrainStats,
-  type WeaponStats,
-  type WeatherType,
-} from "./utils/combat"
+import { AttackPredictionCard } from "@/components/AttackPredictionCard"
+import { CharacterCard } from "@/components/CharacterCard"
 import {
   Card,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -28,137 +14,122 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Label } from "./components/ui/label"
-import { AttackPredictionCard } from "./components/AttackPredictionCard"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  type CharacterStats,
+  type EquippableItem,
+  type TerrainStats,
+  type WeaponStats,
+  type WeatherType,
+} from "@/utils/combat"
+import { TERRAINS } from "@/utils/terrains"
+import { useState } from "react"
+import {
+  WiCloudy,
+  WiDaySunny,
+  WiRain,
+  WiSprinkle,
+  WiThunderstorm,
+} from "weather-icons-react"
+import { Input } from "./components/ui/input"
+import { CLASS_CATALOG } from "./utils/classes"
 
-const defaultAttacker: CharacterStats = {
-  name: "Sara",
-  level: 17,
-  element: "air",
-  alignment: "neutral",
-  className: "cleric",
-  strength: 102,
-  vitality: 105,
-  intelligence: 116,
-  mentality: 120,
-  agility: 123,
-  dexterity: 126,
-  luck: 50,
-  physicalResistance: 125,
-  baseResistances: {
-    air: 95,
-    fire: 95,
-    earth: 95,
-    water: 95,
-    holy: 90,
-    dark: 100,
-  },
-  weatherResistance: 2,
-}
-
-const defaultDefender: CharacterStats = {
-  name: "Neilson",
-  level: 17,
-  element: "air",
-  alignment: "chaotic",
-  className: "skeleton",
-  strength: 116,
-  vitality: 88,
-  intelligence: 109,
-  mentality: 102,
-  agility: 130,
-  dexterity: 106,
-  luck: 50,
-  physicalResistance: 110,
-  baseResistances: {
-    air: 100,
-    fire: 100,
-    earth: 100,
-    water: 100,
-    holy: 125,
-    dark: 75,
-  },
-  weatherResistance: 2,
-}
-
-const TERRAINS: TerrainStats[] = [
+const DEFAULT_CHARACTERS: CharacterStats[] = [
   {
-    name: "Grass",
-    attackModifier: 35,
-    defenseModifier: 15,
-    elementalModifiers: {
-      water: 1,
-      earth: -2,
-      fire: -1,
-      air: 2,
-    },
+    name: "Sara",
+    species: "human",
+    gender: "female",
+    element: "air",
+    alignment: "neutral",
+    class: CLASS_CATALOG["cleric"],
+    level: 17,
+    strength: 102,
+    vitality: 105,
+    intelligence: 116,
+    mentality: 120,
+    agility: 123,
+    dexterity: 126,
+    luck: 50,
   },
   {
-    name: "Gravel",
-    attackModifier: 35,
-    defenseModifier: 15,
-    elementalModifiers: {
-      water: 3,
-      earth: 2,
-      fire: 2,
-      air: -2,
-    },
+    name: "Neilson",
+    species: "human",
+    gender: "male",
+    element: "air",
+    alignment: "chaotic",
+    class: CLASS_CATALOG["skeleton"],
+    level: 17,
+    strength: 116,
+    vitality: 88,
+    intelligence: 109,
+    mentality: 102,
+    agility: 130,
+    dexterity: 106,
+    luck: 50,
   },
   {
-    name: "River",
-    attackModifier: 15,
-    defenseModifier: 10,
-    elementalModifiers: {
-      water: 2,
-      earth: 0,
-      fire: -2,
-      air: 0,
-    },
+    name: "Nelson",
+    species: "human",
+    gender: "male",
+    element: "water",
+    alignment: "chaotic",
+    class: CLASS_CATALOG["ghost"],
+    level: 17,
+    strength: 95,
+    vitality: 76,
+    intelligence: 133,
+    mentality: 141,
+    agility: 104,
+    dexterity: 102,
+    luck: 50,
   },
   {
-    name: "Road",
-    attackModifier: 40,
-    defenseModifier: 20,
-    elementalModifiers: {},
+    name: "Delta",
+    species: "human",
+    gender: "male",
+    element: "water",
+    alignment: "neutral",
+    class: CLASS_CATALOG["lizardMan"],
+    level: 17,
+    strength: 131,
+    vitality: 116,
+    intelligence: 70,
+    mentality: 111,
+    agility: 118,
+    dexterity: 97,
+    luck: 50,
   },
   {
-    name: "Snow",
-    attackModifier: 25,
-    defenseModifier: 20,
-    elementalModifiers: {
-      water: 2,
-      earth: 0,
-      fire: -2,
-      air: 0,
-    },
+    name: "Margaret",
+    species: "human",
+    gender: "female",
+    element: "fire",
+    alignment: "neutral",
+    class: CLASS_CATALOG["siren"],
+    level: 17,
+    strength: 117,
+    vitality: 92,
+    intelligence: 134,
+    mentality: 120,
+    agility: 98,
+    dexterity: 118,
+    luck: 50,
   },
   {
-    name: "Soil",
-    attackModifier: 40,
-    defenseModifier: 15,
-    elementalModifiers: {
-      water: 0,
-      earth: 2,
-      fire: 0,
-      air: -2,
-    },
-  },
-  {
-    name: "Stone Wall",
-    attackModifier: 40,
-    defenseModifier: 15,
-    elementalModifiers: {},
-  },
-  {
-    name: "Water",
-    attackModifier: 10,
-    defenseModifier: 5,
-    elementalModifiers: {
-      water: 2,
-      earth: 0,
-      fire: -2,
-      air: 0,
-    },
+    name: "Penelope",
+    species: "human",
+    gender: "female",
+    element: "air",
+    alignment: "neutral",
+    class: CLASS_CATALOG["valkyrie"],
+    level: 17,
+    strength: 124,
+    vitality: 104,
+    intelligence: 125,
+    mentality: 109,
+    agility: 105,
+    dexterity: 114,
+    luck: 49,
   },
 ]
 
@@ -170,14 +141,18 @@ const DIRECTION_MODIFIERS: Record<AttackDirection, number> = {
 }
 
 export function App() {
-  const [attacker, setAttacker] = useState<CharacterStats>(defaultAttacker)
+  const [attacker, setAttacker] = useState<CharacterStats>(
+    DEFAULT_CHARACTERS[0]
+  )
   const [attackerItems, setAttackerItems] = useState<(EquippableItem | null)[]>(
     [null, null, null, null]
   )
   const [defenderItems, setDefenderItems] = useState<(EquippableItem | null)[]>(
     [null, null, null, null]
   )
-  const [defender, setDefender] = useState<CharacterStats>(defaultDefender)
+  const [defender, setDefender] = useState<CharacterStats>(
+    DEFAULT_CHARACTERS[1]
+  )
   const [direction, setDirection] = useState<AttackDirection>("front")
   const [attackerTerrain, setAttackerTerrain] = useState<TerrainStats>(
     TERRAINS[0]
@@ -186,6 +161,8 @@ export function App() {
     TERRAINS[0]
   )
   const [weather, setWeather] = useState<WeatherType>("sunny")
+  const [attackCorrection, setAttackCorrection] = useState<number>(0)
+  const [defenseCorrection, setDefenseCorrection] = useState<number>(0)
 
   const attackerWeapons = attackerItems.filter(
     (item): item is WeaponStats => item?.type === "weapon"
@@ -330,6 +307,36 @@ export function App() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    Attack Correction
+                  </Label>
+                  <Input
+                    type="number"
+                    value={attackCorrection}
+                    onChange={(e) =>
+                      e.target.value !== "" &&
+                      setAttackCorrection(Number(e.target.value))
+                    }
+                    min={-999}
+                    max={999}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    Defense Correction
+                  </Label>
+                  <Input
+                    type="number"
+                    value={defenseCorrection}
+                    onChange={(e) =>
+                      e.target.value !== "" &&
+                      setDefenseCorrection(Number(e.target.value))
+                    }
+                    min={-999}
+                    max={999}
+                  />
+                </div>
               </div>
             </CardHeader>
             {attackerWeapons.length === 0 ? (
@@ -343,6 +350,8 @@ export function App() {
                 weapon={null}
                 sideModifier={sideModifier}
                 weather={weather}
+                attackCorrection={attackCorrection}
+                defenseCorrection={defenseCorrection}
               />
             ) : (
               attackerWeapons.map((weapon) => (
@@ -356,12 +365,14 @@ export function App() {
                   weapon={weapon}
                   sideModifier={sideModifier}
                   weather={weather}
+                  attackCorrection={attackCorrection}
+                  defenseCorrection={defenseCorrection}
                 />
               ))
             )}
 
             <div className="mx-3 pl-1 text-xs font-bold tracking-widest text-sky-500 uppercase">
-            🛡️ Counter Attack
+              🛡️ Counter Attack
             </div>
 
             <AttackPredictionCard
@@ -374,6 +385,8 @@ export function App() {
               weapon={defenderPrimaryWeapon}
               sideModifier={DIRECTION_MODIFIERS["front"]}
               weather={weather}
+              attackCorrection={defenseCorrection}
+              defenseCorrection={attackCorrection}
             />
           </Card>
         </div>

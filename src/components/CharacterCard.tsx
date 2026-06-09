@@ -37,17 +37,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CLASS_CATALOG } from "@/utils/classes"
 import {
   type AlignmentType,
   type CharacterStats,
   type ElementType,
   type EquippableItem,
+  type GenderType,
+  type SpeciesType,
   ALIGNMENTS,
+  calculateDefensePower,
+  calculateEvasiveness,
+  calculateMagicAttack,
+  calculateMagicDefense,
   CHARACTER_ALLOWED_ELEMENTS,
-  CLASS_CATALOG,
+  GENDERS,
+  getAdjustedStats,
+  SPECIES,
 } from "@/utils/combat" // Assuming types are located here
 import { useState } from "react"
-import { ITEM_CATALOG } from "@/utils/itemsMock"
+import { ITEM_CATALOG } from "@/utils/items"
 
 interface CharacterCardProps {
   character: CharacterStats
@@ -91,19 +100,17 @@ export function CharacterCard({
     setSearchTerm("")
   }
 
-  const handleClassChange = (newClassName: string) => {
-    const selectedClass = CLASS_CATALOG[newClassName]
+  const handleClassChange = (classId: string) => {
+    const selectedClass = Object.values(CLASS_CATALOG).find(
+      (cls) => cls.id === Number(classId)
+    )
+    
     if (!selectedClass || !onCharacterChange) return
 
-    const updatedCharacter = {
+    onCharacterChange({
       ...character,
-      className: newClassName,
-      weatherResistance: selectedClass.weatherResistance,
-      physicalResistance: selectedClass.physicalResistance,
-      baseResistances: { ...selectedClass.baseResistances },
-    }
-
-    onCharacterChange(updatedCharacter)
+      class: selectedClass,
+    })
   }
 
   // List of attributes to loop through for the grid (excluding non-number fields)
@@ -117,6 +124,13 @@ export function CharacterCard({
     { key: "dexterity", label: "Dexterity" },
     { key: "luck", label: "Luck" },
   ]
+
+  const adjustedCharacter = getAdjustedStats(character, equippedItems)
+
+  const magicAttack = calculateMagicAttack(adjustedCharacter)
+  const defensePower = calculateDefensePower(adjustedCharacter)
+  const magicDefense = calculateMagicDefense(adjustedCharacter)
+  const evasiveness = calculateEvasiveness(adjustedCharacter, equippedItems)
 
   const searchedItems = ITEM_CATALOG.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -140,10 +154,8 @@ export function CharacterCard({
         <CardHeader className="space-y-1 border-b pb-4">
           <div className="grid grid-cols-2 gap-4 pt-2">
             <div>
-              <Label
-                className="text-xs tracking-wider text-muted-foreground uppercase"
-              >
-                Character Name
+              <Label className="text-xs tracking-wider text-muted-foreground uppercase">
+                Name
               </Label>
               <Input
                 value={character.name}
@@ -153,30 +165,63 @@ export function CharacterCard({
             </div>
             <div className="flex flex-col">
               <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Class Tier
+                Species
               </Label>
               <Select
-                value={character.className}
-                onValueChange={(newClassName) =>
-                  handleClassChange(newClassName)
+                value={character.species}
+                onValueChange={(val) =>
+                  updateAttribute("species", val as SpeciesType)
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select Class" />
+                  <SelectValue />
                 </SelectTrigger>
-                <SelectContent position="popper">
+                <SelectContent>
                   <SelectGroup>
-                    {Object.entries(CLASS_CATALOG).map(([key, value]) => (
-                      <SelectItem value={key}>{value.name}</SelectItem>
+                    {SPECIES.map((sp) => (
+                      <SelectItem
+                        key={sp.key}
+                        value={sp.key}
+                        className="text-xs"
+                      >
+                        {sp.label}
+                      </SelectItem>
                     ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
-
             <div className="flex flex-col">
               <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Affinity Element
+                Gender
+              </Label>
+              <Select
+                value={character.gender}
+                onValueChange={(val) =>
+                  updateAttribute("gender", val as GenderType)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {GENDERS.map((ge) => (
+                      <SelectItem
+                        key={ge.key}
+                        value={ge.key}
+                        className="text-xs"
+                      >
+                        {ge.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col">
+              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                Element
               </Label>
               <Select
                 value={character.element}
@@ -204,7 +249,7 @@ export function CharacterCard({
             </div>
             <div className="flex flex-col">
               <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Moral Alignment
+                Alignment
               </Label>
               <Select
                 value={character.alignment}
@@ -224,6 +269,28 @@ export function CharacterCard({
                         className="text-xs"
                       >
                         {al.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col">
+              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                Class
+              </Label>
+              <Select
+                value={character.class.id.toString()}
+                onValueChange={handleClassChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Class" />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  <SelectGroup>
+                    {Object.values(CLASS_CATALOG).map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id.toString()}>
+                        {cls.name}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -253,6 +320,40 @@ export function CharacterCard({
                 </NumberField>
               </div>
             ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2 border-t pt-4 text-center">
+            <div className="rounded bg-muted/40 p-2">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Magic Attack
+              </div>
+              <div className="text-sm font-bold text-foreground">
+                {magicAttack}
+              </div>
+            </div>
+            <div className="rounded bg-muted/40 p-2">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Defense
+              </div>
+              <div className="text-sm font-bold text-foreground">
+                {defensePower}
+              </div>
+            </div>
+            <div className="rounded bg-muted/40 p-2">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Magic Defense
+              </div>
+              <div className="text-sm font-bold text-foreground">
+                {magicDefense}
+              </div>
+            </div>
+            <div className="rounded bg-muted/40 p-2">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Evasiveness
+              </div>
+              <div className="text-sm font-bold text-foreground">
+                {evasiveness}
+              </div>
+            </div>
           </div>
           <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
             Inventory
