@@ -9,7 +9,7 @@ export const TERRAINS: TerrainStats[] = [
       water: 1,
       earth: -2,
       fire: -1,
-      air: 2,
+      wind: 2,
     },
   },
   {
@@ -20,7 +20,7 @@ export const TERRAINS: TerrainStats[] = [
       water: 3,
       earth: 2,
       fire: 2,
-      air: -2,
+      wind: -2,
     },
   },
   {
@@ -31,7 +31,7 @@ export const TERRAINS: TerrainStats[] = [
       water: 2,
       earth: 0,
       fire: -2,
-      air: 0,
+      wind: 0,
     },
   },
   {
@@ -48,7 +48,7 @@ export const TERRAINS: TerrainStats[] = [
       water: 2,
       earth: 0,
       fire: -2,
-      air: 0,
+      wind: 0,
     },
   },
   {
@@ -59,7 +59,7 @@ export const TERRAINS: TerrainStats[] = [
       water: 0,
       earth: 2,
       fire: 0,
-      air: -2,
+      wind: -2,
     },
   },
   {
@@ -76,7 +76,7 @@ export const TERRAINS: TerrainStats[] = [
       water: 2,
       earth: 0,
       fire: -2,
-      air: 0,
+      wind: 0,
     },
   },
 ]

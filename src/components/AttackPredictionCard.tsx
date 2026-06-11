@@ -8,18 +8,19 @@ import {
   calculatePhysicalResistance,
   getAdjustedStats,
   WEATHER_ALIGNMENT_MODIFIERS,
-  type CharacterStats,
   type ElementalModifiers,
   type EquippableItem,
+  type ResolvedCharacter,
   type TerrainStats,
   type WeaponStats,
   type WeatherType,
 } from "@/utils/combat"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { ItemIcon } from "./ItemIcon"
 
 interface AttackPredictionCardProps {
-  attacker: CharacterStats
-  defender: CharacterStats
+  attacker: ResolvedCharacter
+  defender: ResolvedCharacter
   attackerItems: (EquippableItem | null)[]
   defenderItems: (EquippableItem | null)[]
   weapon: WeaponStats | null
@@ -27,8 +28,6 @@ interface AttackPredictionCardProps {
   defenderTerrain: TerrainStats
   sideModifier: number
   weather: WeatherType
-  attackCorrection: number
-  defenseCorrection: number
 }
 
 export function AttackPredictionCard({
@@ -42,8 +41,14 @@ export function AttackPredictionCard({
   sideModifier,
   weather,
 }: AttackPredictionCardProps) {
-  const adjustedAttacker = getAdjustedStats(attacker, attackerItems)
-  const adjustedDefender = getAdjustedStats(defender, defenderItems)
+  const adjustedAttacker = getAdjustedStats(
+    attacker,
+    attackerItems
+  ) as ResolvedCharacter
+  const adjustedDefender = getAdjustedStats(
+    defender,
+    defenderItems
+  ) as ResolvedCharacter
 
   const attackerAccuracy = calculateAccuracy(adjustedAttacker, attackerItems)
   const defenderEvasiveness = calculateEvasiveness(
@@ -67,6 +72,9 @@ export function AttackPredictionCard({
   const preferredWeaponBonus =
     adjustedAttacker.class.preferredWeaponCategory === weapon?.category ? 3 : 0
 
+  const antiDragonBonus =
+    (adjustedAttacker.antiDragon ? 8 : 0) + (weapon?.antiDragon ? 8 : 0)
+
   const attackCorrection = Math.max(
     0,
     Math.min(
@@ -74,10 +82,11 @@ export function AttackPredictionCard({
       50 +
         attackerTerrain.attackModifier +
         WEATHER_ALIGNMENT_MODIFIERS[weather][adjustedAttacker.alignment] +
-        adjustedAttacker.class.weatherResistance +
+        (adjustedAttacker.class.weatherResistance || 0) +
         attackerTerrainBonus +
         weaponElementModifier +
-        preferredWeaponBonus
+        preferredWeaponBonus +
+        antiDragonBonus
     )
   )
 
@@ -96,7 +105,7 @@ export function AttackPredictionCard({
         defenderTerrain.defenseModifier +
         WEATHER_ALIGNMENT_MODIFIERS[weather][adjustedDefender.alignment] +
         defenderTerrainBonus +
-        adjustedDefender.class.weatherResistance
+        (adjustedDefender.class?.weatherResistance || 0)
     )
   )
 
@@ -150,14 +159,19 @@ export function AttackPredictionCard({
     <Card className="mx-3 mb-4 border bg-card shadow-sm">
       <CardHeader className="border-b bg-muted/20 py-3">
         <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-wide text-muted-foreground uppercase">
-          {weapon ? `⚔️ ${weapon.name}` : "🤜 Unarmed (Fists)"}
+          {weapon ? (
+            <>
+              <ItemIcon item={weapon} size={32} />
+              {weapon.name}
+            </>
+           ) : "Punch"}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-4 shadow-sm">
             <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-              Estimated Damage
+              Damage
             </span>
             <span className="mt-1 text-4xl font-black text-destructive">
               {finalDamage}
@@ -166,7 +180,7 @@ export function AttackPredictionCard({
 
           <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-4 shadow-sm">
             <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-              Net Hit Chance
+              Hit Chance
             </span>
             <span className="mt-1 text-4xl font-black text-amber-500">
               {finalHitChance}%
@@ -182,12 +196,6 @@ export function AttackPredictionCard({
               <span className="font-medium text-foreground">{attackPower}</span>
             </div>
             <div>
-              Accuracy:{" "}
-              <span className="font-medium text-foreground">
-                {attackerAccuracy}
-              </span>
-            </div>
-            <div>
               Attack Correction:{" "}
               <span className="font-medium text-foreground">
                 {attackCorrection}%
@@ -197,27 +205,15 @@ export function AttackPredictionCard({
           <div className="space-y-0.5 border-l pl-3">
             <div className="font-semibold text-foreground">Defender Stats</div>
             <div>
-              Defense Power:{" "}
+              Resistance:{" "}
               <span className="font-medium text-foreground">
-                {defensePower}
-              </span>
-            </div>
-            <div>
-              Evasiveness:{" "}
-              <span className="font-medium text-foreground">
-                {defenderEvasiveness}
+                {defenderResistance}%
               </span>
             </div>
             <div>
               Defense Correction:{" "}
               <span className="font-medium text-foreground">
                 {defenseCorrection}%
-              </span>
-            </div>
-            <div>
-              Defender Resistance:{" "}
-              <span className="font-medium text-foreground">
-                {defenderResistance}%
               </span>
             </div>
           </div>

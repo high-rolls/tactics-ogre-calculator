@@ -12,7 +12,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 115,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -32,7 +32,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 110,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -52,7 +52,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 105,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -72,7 +72,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 100,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -92,7 +92,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 120,
     baseResistances: {
-      air: 95,
+      wind: 95,
       fire: 95,
       earth: 95,
       water: 95,
@@ -112,7 +112,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 110,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -132,7 +132,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast-acrobatic", "on-water"],
     physicalResistance: 130,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -152,7 +152,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 105,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -171,7 +171,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["slow"],
     physicalResistance: 125,
     baseResistances: {
-      air: 95,
+      wind: 95,
       fire: 95,
       earth: 95,
       water: 95,
@@ -190,7 +190,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["slow"],
     physicalResistance: 105,
     baseResistances: {
-      air: 90,
+      wind: 90,
       fire: 90,
       earth: 90,
       water: 90,
@@ -209,7 +209,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["slow"],
     physicalResistance: 120,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -228,7 +228,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["slow"],
     physicalResistance: 65,
     baseResistances: {
-      air: 70,
+      wind: 70,
       fire: 70,
       earth: 70,
       water: 70,
@@ -248,7 +248,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 135,
     baseResistances: {
-      air: 130,
+      wind: 130,
       fire: 130,
       earth: 130,
       water: 130,
@@ -267,7 +267,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast", "underwater"],
     physicalResistance: 115,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -287,7 +287,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast", "underwater"],
     physicalResistance: 110,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -307,7 +307,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast", "underwater"],
     physicalResistance: 110,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -327,7 +327,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast", "underwater"],
     physicalResistance: 110,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -347,7 +347,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["slow"],
     physicalResistance: 120,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -366,7 +366,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 125,
     baseResistances: {
-      air: 95,
+      wind: 95,
       fire: 95,
       earth: 95,
       water: 95,
@@ -385,7 +385,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["slow"],
     physicalResistance: 125,
     baseResistances: {
-      air: 95,
+      wind: 95,
       fire: 95,
       earth: 95,
       water: 95,
@@ -404,7 +404,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["slow"],
     physicalResistance: 130,
     baseResistances: {
-      air: 90,
+      wind: 90,
       fire: 90,
       earth: 90,
       water: 90,
@@ -423,7 +423,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fly"],
     physicalResistance: 100,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -443,7 +443,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fly", "float"],
     physicalResistance: 125,
     baseResistances: {
-      air: 90,
+      wind: 90,
       fire: 90,
       earth: 90,
       water: 90,
@@ -462,7 +462,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fly", "float"],
     physicalResistance: 115,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -481,7 +481,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fly"],
     physicalResistance: 120,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -501,7 +501,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast", "underwater"],
     physicalResistance: 105,
     baseResistances: {
-      air: 110,
+      wind: 110,
       fire: 110,
       earth: 110,
       water: 110,
@@ -521,7 +521,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 110,
     baseResistances: {
-      air: 95,
+      wind: 95,
       fire: 95,
       earth: 95,
       water: 95,
@@ -540,7 +540,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 110,
     baseResistances: {
-      air: 100,
+      wind: 100,
       fire: 100,
       earth: 100,
       water: 100,
@@ -559,7 +559,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["warp", "float"],
     physicalResistance: 65,
     baseResistances: {
-      air: 110,
+      wind: 110,
       fire: 110,
       earth: 110,
       water: 110,
@@ -578,7 +578,7 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
     movementTypes: ["fast"],
     physicalResistance: 105,
     baseResistances: {
-      air: 95,
+      wind: 95,
       fire: 95,
       earth: 95,
       water: 95,

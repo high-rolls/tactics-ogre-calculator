@@ -1,4 +1,7 @@
-export type ElementType = "air" | "earth" | "fire" | "water" | "holy" | "dark"
+import { CLASS_CATALOG } from "./classes"
+
+export type ElementType = "wind" | "earth" | "fire" | "water" | "holy" | "dark"
+export type FactionType = "player" | "enemy" | "guest"
 export type AlignmentType = "lawful" | "neutral" | "chaotic"
 export type SpeciesType = "human" | "beast" | "dragon" | "giant" | "aquatic"
 export type GenderType = "male" | "female"
@@ -33,7 +36,7 @@ export type WeaponCategoryType =
   | "crossbow"
 
 export interface ElementalResistances {
-  air: number
+  wind: number
   earth: number
   fire: number
   water: number
@@ -56,12 +59,15 @@ export interface CharacterClass {
 }
 
 export interface CharacterStats {
+  id: string
+  rosterNumber?: number
+  faction: FactionType
   name: string
   species: SpeciesType
   gender: GenderType
   element: ElementType
   alignment: AlignmentType
-  class: CharacterClass
+  classId: number
   level: number
   strength: number
   vitality: number
@@ -70,6 +76,11 @@ export interface CharacterStats {
   agility: number
   dexterity: number
   luck: number
+  antiDragon?: boolean
+}
+
+export interface ResolvedCharacter extends CharacterStats {
+  class: CharacterClass
 }
 
 export interface StatModifiers {
@@ -82,40 +93,44 @@ export interface StatModifiers {
   luck?: number
 }
 
-export interface EquippableItem {
+export interface BaseItem {
   type: "weapon" | "armor" | "consumable"
+  key: string
   name: string
+  description?: string
   weight: number
-  iconName?: string
   slot: ItemSlotType
   handsRequired: number
   statModifiers?: StatModifiers
   elementalResistances?: Partial<ElementalResistances>
 }
 
-export interface WeaponStats extends EquippableItem {
+export interface WeaponStats extends BaseItem {
   type: "weapon"
   slot: "hands"
   category: WeaponCategoryType
   strength: number
   element?: ElementType
+  antiDragon?: boolean
 }
 
-export interface ArmorStats extends EquippableItem {
+export interface ArmorStats extends BaseItem {
   type: "armor"
   physicalResistance: number
 }
 
-export interface ConsumableStats extends EquippableItem {
+export interface ConsumableStats extends BaseItem {
   type: "consumable"
   slot: "bag"
 }
+
+export type EquippableItem = WeaponStats | ArmorStats | ConsumableStats
 
 export interface ElementalModifiers {
   water: number
   earth: number
   fire: number
-  air: number
+  wind: number
 }
 
 export interface TerrainStats {
@@ -156,6 +171,12 @@ export const WEATHER_ALIGNMENT_MODIFIERS: Record<
   },
 }
 
+export const FACTIONS: { key: FactionType; label: string }[] = [
+  { key: "player", label: "Player" },
+  { key: "enemy", label: "Enemy" },
+  { key: "guest", label: "Guest" },
+]
+
 export const SPECIES: { key: SpeciesType; label: string }[] = [
   { key: "human", label: "Human" },
 ]
@@ -171,18 +192,33 @@ export const ALIGNMENTS: { key: AlignmentType; label: string }[] = [
   { key: "chaotic", label: "Chaotic" },
 ]
 
-export const ELEMENTS: { key: ElementType; label: string; icon: string }[] = [
-  { key: "air", label: "Air", icon: "💨" },
-  { key: "earth", label: "Earth", icon: "🌱" },
-  { key: "fire", label: "Fire", icon: "🔥" },
-  { key: "water", label: "Water", icon: "💧" },
-  { key: "holy", label: "Holy", icon: "🕊️" },
-  { key: "dark", label: "Dark", icon: "💀" },
+export const ELEMENTS: { key: ElementType; label: string }[] = [
+  { key: "wind", label: "Wind" },
+  { key: "earth", label: "Earth" },
+  { key: "fire", label: "Fire" },
+  { key: "water", label: "Water" },
+  { key: "holy", label: "Holy" },
+  { key: "dark", label: "Dark" },
 ]
 
 export const CHARACTER_ALLOWED_ELEMENTS = ELEMENTS.filter(
   (el) => el.key !== "holy" && el.key !== "dark"
 )
+
+export function resolveCharacter(character: CharacterStats): ResolvedCharacter {
+  const classData = Object.values(CLASS_CATALOG).find(
+    (c) => c.id === character.classId
+  )
+
+  if (!classData) {
+    throw new Error(`Unknown class id ${character.classId}`)
+  }
+
+  return {
+    ...character,
+    class: classData,
+  }
+}
 
 export function calculateEquipmentWeight(
   equippedItems: (EquippableItem | null)[]
@@ -255,8 +291,14 @@ export function calculateMagicDefense(character: CharacterStats): number {
   return character.vitality + ((character.mentality + 1) >> 1)
 }
 
+export function calculateSpecialAttack(character: CharacterStats): number {
+  return (
+    (((3 * character.mentality) + 1) >> 1) + ((character.strength + 1) >> 1)
+  )
+}
+
 export function calculatePhysicalResistance(
-  character: CharacterStats,
+  character: ResolvedCharacter,
   equippedItems: (EquippableItem | null)[]
 ): number {
   const equippedArmor: ArmorStats[] = equippedItems.filter(
@@ -285,8 +327,8 @@ export function calculateElementalMatchup(
   otherElement: ElementType
 ): number {
   if (element === otherElement) return -1
-  if (element === "air" && otherElement === "earth") return 1
-  if (element === "earth" && otherElement === "air") return 1
+  if (element === "wind" && otherElement === "earth") return 1
+  if (element === "earth" && otherElement === "wind") return 1
   if (element === "fire" && otherElement === "water") return 1
   if (element === "water" && otherElement === "fire") return 1
   if (element === "holy" && otherElement === "dark") return 1
@@ -295,11 +337,11 @@ export function calculateElementalMatchup(
 }
 
 export function calculateNetElementalResistance(
-  character: CharacterStats,
+  character: ResolvedCharacter,
   equippedItems: (EquippableItem | null)[]
 ): ElementalResistances {
   const elements: (keyof ElementalResistances)[] = [
-    "air",
+    "wind",
     "earth",
     "fire",
     "water",
@@ -319,4 +361,14 @@ export function calculateNetElementalResistance(
   })
 
   return netResistances
+}
+
+export function calculateMaxWT(
+  character: ResolvedCharacter,
+  equippedItems: (EquippableItem | null)[]
+) {
+  const equipmentWeight = calculateEquipmentWeight(equippedItems)
+  return (
+    510 - character.agility + equipmentWeight + character.class.weightPenalty
+  )
 }

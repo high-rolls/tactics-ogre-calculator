@@ -1,7 +1,5 @@
 import { PlusIcon } from "lucide-react"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
   Dialog,
@@ -16,10 +14,8 @@ import {
   ItemContent,
   ItemDescription,
   ItemGroup,
-  ItemMedia,
   ItemTitle,
 } from "@/components/ui/item"
-import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   NumberField,
@@ -43,33 +39,39 @@ import {
   type CharacterStats,
   type ElementType,
   type EquippableItem,
+  type FactionType,
   type GenderType,
+  type ItemSlotType,
+  type ResolvedCharacter,
   type SpeciesType,
   ALIGNMENTS,
+  calculateAccuracy,
+  calculateAttackPower,
   calculateDefensePower,
   calculateEvasiveness,
   calculateMagicAttack,
   calculateMagicDefense,
+  calculateMaxWT,
+  calculateSpecialAttack,
   CHARACTER_ALLOWED_ELEMENTS,
+  FACTIONS,
   GENDERS,
   getAdjustedStats,
   SPECIES,
 } from "@/utils/combat" // Assuming types are located here
 import { useState } from "react"
 import { ITEM_CATALOG } from "@/utils/items"
+import { Field, FieldLabel } from "./ui/field"
+import { InventoryItem } from "./InventoryItem"
+import { ElementIcon } from "./ElementIcon"
 
 interface CharacterCardProps {
-  character: CharacterStats
+  character: ResolvedCharacter
   onCharacterChange?: (updatedCharacter: CharacterStats) => void
   equippedItems: (EquippableItem | null)[]
   onEquippedItemsChange?: (
     updatedEquippedItems: (EquippableItem | null)[]
   ) => void
-}
-
-const getItemIconUrl = (iconName?: string) => {
-  if (!iconName) iconName = "placeholder"
-  return new URL(`../assets/items/${iconName}.gif`, import.meta.url).href
 }
 
 export function CharacterCard({
@@ -90,7 +92,7 @@ export function CharacterCard({
     if (onCharacterChange) onCharacterChange(updated)
   }
 
-  const handleSelectItem = (newItem: EquippableItem | null) => {
+  const handleSelectItem = (newItem: EquippableItem) => {
     const newEquippedItems = equippedItems.map((oldItem, index) => {
       if (index === activeSlotIndex) return newItem
       return oldItem
@@ -100,16 +102,24 @@ export function CharacterCard({
     setSearchTerm("")
   }
 
+  const clearItemSlot = (slotIndex: number) => {
+    const newEquippedItems = equippedItems.map((oldItem, index) => {
+      if (index === slotIndex) return null
+      return oldItem
+    })
+    if (onEquippedItemsChange) onEquippedItemsChange(newEquippedItems)
+  }
+
   const handleClassChange = (classId: string) => {
     const selectedClass = Object.values(CLASS_CATALOG).find(
       (cls) => cls.id === Number(classId)
     )
-    
+
     if (!selectedClass || !onCharacterChange) return
 
     onCharacterChange({
       ...character,
-      class: selectedClass,
+      classId: Number(classId),
     })
   }
 
@@ -126,21 +136,23 @@ export function CharacterCard({
   ]
 
   const adjustedCharacter = getAdjustedStats(character, equippedItems)
-
+  const attackPower = calculateAttackPower(adjustedCharacter, null)
   const magicAttack = calculateMagicAttack(adjustedCharacter)
+  const accuracy = calculateAccuracy(adjustedCharacter, equippedItems)
   const defensePower = calculateDefensePower(adjustedCharacter)
   const magicDefense = calculateMagicDefense(adjustedCharacter)
+  const specialAttack = calculateSpecialAttack(adjustedCharacter)
   const evasiveness = calculateEvasiveness(adjustedCharacter, equippedItems)
+  const maximumWT = calculateMaxWT(
+    adjustedCharacter as ResolvedCharacter,
+    equippedItems
+  )
 
   const searchedItems = ITEM_CATALOG.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const weaponsList = searchedItems.filter((item) => item.type === "weapon")
-  const armorList = searchedItems.filter((item) => item.type === "armor")
-  const consumablesList = searchedItems.filter(
-    (item) => item.type === "consumable"
-  )
+  const itemSlotTabs: ItemSlotType[] = ["hands", "head", "body", "feet", "bag"]
 
   return (
     <Dialog
@@ -149,24 +161,62 @@ export function CharacterCard({
         if (!open) setActiveSlotIndex(null)
       }}
     >
-      <Card className="mx-auto w-full max-w-sm shadow-md">
+      <Card className="mx-auto w-full max-w-sm shadow-md md:max-w-2xl">
         {/* Editable Header */}
         <CardHeader className="space-y-1 border-b pb-4">
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <div>
-              <Label className="text-xs tracking-wider text-muted-foreground uppercase">
-                Name
-              </Label>
+          <div className="grid grid-cols-2 gap-4 pt-2 md:grid-cols-4 xl:grid-cols-2">
+            <Field>
+              <FieldLabel>Faction</FieldLabel>
+              <Select
+                value={character.faction}
+                onValueChange={(val) =>
+                  updateAttribute("faction", val as FactionType)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {FACTIONS.map((fa) => (
+                      <SelectItem
+                        key={fa.key}
+                        value={fa.key}
+                        className="text-xs"
+                      >
+                        {fa.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <NumberField
+              value={
+                character.faction === "player" ? character.rosterNumber : null
+              }
+              onValueChange={(val) => updateAttribute("rosterNumber", val)}
+              min={1}
+              max={999}
+              disabled={character.faction !== "player"}
+            >
+              <NumberFieldScrubArea label="Number" className="text- text-xs" />
+              <NumberFieldGroup className="w-full">
+                <NumberFieldDecrement />
+                <NumberFieldInput className="w-full text-center" />
+                <NumberFieldIncrement />
+              </NumberFieldGroup>
+            </NumberField>
+            <Field>
+              <FieldLabel>Name</FieldLabel>
               <Input
                 value={character.name}
                 onChange={(e) => updateAttribute("name", e.target.value)}
                 placeholder="Enter character name..."
               />
-            </div>
-            <div className="flex flex-col">
-              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Species
-              </Label>
+            </Field>
+            <Field>
+              <FieldLabel>Species</FieldLabel>
               <Select
                 value={character.species}
                 onValueChange={(val) =>
@@ -190,11 +240,9 @@ export function CharacterCard({
                   </SelectGroup>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col">
-              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Gender
-              </Label>
+            </Field>
+            <Field>
+              <FieldLabel>Gender</FieldLabel>
               <Select
                 value={character.gender}
                 onValueChange={(val) =>
@@ -218,11 +266,9 @@ export function CharacterCard({
                   </SelectGroup>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col">
-              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Element
-              </Label>
+            </Field>
+            <Field>
+              <FieldLabel>Element</FieldLabel>
               <Select
                 value={character.element}
                 onValueChange={(val) =>
@@ -240,17 +286,15 @@ export function CharacterCard({
                         value={el.key}
                         className="text-xs"
                       >
-                        {el.icon} {el.label}
+                        {el.label} <ElementIcon element={el.key} />
                       </SelectItem>
                     ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col">
-              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Alignment
-              </Label>
+            </Field>
+            <Field>
+              <FieldLabel>Alignment</FieldLabel>
               <Select
                 value={character.alignment}
                 onValueChange={(val) =>
@@ -274,13 +318,11 @@ export function CharacterCard({
                   </SelectGroup>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col">
-              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Class
-              </Label>
+            </Field>
+            <Field>
+              <FieldLabel>Class</FieldLabel>
               <Select
-                value={character.class.id.toString()}
+                value={character.classId.toString()}
                 onValueChange={handleClassChange}
               >
                 <SelectTrigger>
@@ -296,284 +338,196 @@ export function CharacterCard({
                   </SelectGroup>
                 </SelectContent>
               </Select>
-            </div>
+            </Field>
           </div>
         </CardHeader>
 
         {/* Attributes Grid */}
         <CardContent className="pt-6">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4 xl:grid-cols-2">
             {numericAttributes.map(({ key, label }) => (
-              <div key={key} className="flex flex-col space-y-1.5">
-                <NumberField
-                  value={character[key] as number}
-                  onValueChange={(val) => updateAttribute(key, val)}
-                  min={1}
-                  max={999}
-                >
-                  <NumberFieldScrubArea label={label} />
-                  <NumberFieldGroup className="w-full">
-                    <NumberFieldDecrement />
-                    <NumberFieldInput className="w-full text-center" />
-                    <NumberFieldIncrement />
-                  </NumberFieldGroup>
-                </NumberField>
-              </div>
+              <NumberField
+                key={key}
+                value={character[key] as number}
+                onValueChange={(val) => updateAttribute(key, val)}
+                min={1}
+                max={999}
+              >
+                <NumberFieldScrubArea label={label} />
+                <NumberFieldGroup className="w-full">
+                  <NumberFieldDecrement />
+                  <NumberFieldInput className="w-full text-center" />
+                  <NumberFieldIncrement />
+                </NumberFieldGroup>
+              </NumberField>
             ))}
           </div>
-          <div className="grid grid-cols-3 gap-2 border-t pt-4 text-center">
+          <div className="grid grid-cols-4 gap-2 border-t pt-4 text-center">
             <div className="rounded bg-muted/40 p-2">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Magic Attack
+              <div className="text-sm font-bold text-foreground">
+                {attackPower}
               </div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Attack Power
+              </div>
+            </div>
+            <div className="rounded bg-muted/40 p-2">
               <div className="text-sm font-bold text-foreground">
                 {magicAttack}
               </div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Magic Power
+              </div>
             </div>
             <div className="rounded bg-muted/40 p-2">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Defense
+              <div className="text-sm font-bold text-foreground">
+                {specialAttack}
               </div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Special Power
+              </div>
+            </div>
+            <div className="rounded bg-muted/40 p-2">
+              <div className="text-sm font-bold text-foreground">
+                {maximumWT}
+              </div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Max WT
+              </div>
+            </div>
+            <div className="rounded bg-muted/40 p-2">
               <div className="text-sm font-bold text-foreground">
                 {defensePower}
               </div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Physical Defense
+              </div>
             </div>
             <div className="rounded bg-muted/40 p-2">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Magic Defense
-              </div>
               <div className="text-sm font-bold text-foreground">
                 {magicDefense}
               </div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Magic Defense
+              </div>
             </div>
             <div className="rounded bg-muted/40 p-2">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Evasiveness
+              <div className="text-sm font-bold text-foreground">
+                {accuracy}
               </div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Accuracy
+              </div>
+            </div>
+            <div className="rounded bg-muted/40 p-2">
               <div className="text-sm font-bold text-foreground">
                 {evasiveness}
+              </div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                Evasiveness
               </div>
             </div>
           </div>
           <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
             Inventory
           </h2>
-          <div className="flex flex-col gap-y-2">
+          <ItemGroup className="md:grid md:grid-cols-2 xl:grid-cols-1">
             {[0, 1, 2, 3].map((slotIndex) => {
               const item = equippedItems[slotIndex]
 
               if (item) {
                 return (
-                  <div
-                    className="flex w-full max-w-md cursor-pointer flex-col gap-4"
+                  <InventoryItem
+                    key={slotIndex}
+                    item={item}
                     onClick={() => setActiveSlotIndex(slotIndex)}
-                  >
-                    <Item variant="outline" asChild>
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setActiveSlotIndex(slotIndex)
-                        }}
-                      >
-                        <ItemMedia>
-                          <Avatar>
-                            <AvatarImage
-                              src={getItemIconUrl(item.iconName)}
-                              style={{ imageRendering: "pixelated" }}
-                            />
-                            <AvatarFallback>
-                              {item.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                        </ItemMedia>
-                        <ItemContent>
-                          <ItemTitle>{item.name}</ItemTitle>
-                          <ItemDescription>
-                            Weight: {item.weight}
-                            {item.type === "weapon" && "strength" in item && (
-                              <> | Strength: +{item.strength}</>
-                            )}
-                            {item.type === "armor" &&
-                              "physicalResistance" in item && (
-                                <> | Armor: +{item.physicalResistance}</>
-                              )}
-                          </ItemDescription>
-                        </ItemContent>
-                      </a>
-                    </Item>
-                  </div>
+                    isRemoveButtonShown={true}
+                    onRemove={() => clearItemSlot(slotIndex)}
+                  />
                 )
               }
               return (
-                <div
-                  className="flex w-full max-w-md cursor-pointer flex-col gap-4"
-                  onClick={() => setActiveSlotIndex(slotIndex)}
-                >
-                  <Item variant="outline" asChild>
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        setActiveSlotIndex(slotIndex)
-                      }}
-                    >
-                      <ItemContent>
-                        <ItemTitle>Slot {slotIndex + 1}</ItemTitle>
-                        <ItemDescription>Empty Slot</ItemDescription>
-                      </ItemContent>
-                      <ItemActions>
-                        <PlusIcon className="size-4" />
-                      </ItemActions>
-                    </a>
-                  </Item>
-                </div>
+                <Item key={slotIndex} variant="muted" asChild>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setActiveSlotIndex(slotIndex)
+                    }}
+                  >
+                    <ItemContent>
+                      <ItemTitle>Slot {slotIndex + 1}</ItemTitle>
+                      <ItemDescription>Empty Slot</ItemDescription>
+                    </ItemContent>
+                    <ItemActions>
+                      <PlusIcon className="size-4" />
+                    </ItemActions>
+                  </a>
+                </Item>
               )
             })}
-          </div>
+          </ItemGroup>
         </CardContent>
       </Card>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm md:max-w-2xl lg:max-w-4xl">
         <DialogHeader className="gap-3">
           <DialogTitle>
             Editing Slot #{activeSlotIndex !== null ? activeSlotIndex + 1 : "?"}
           </DialogTitle>
-          <Button variant="destructive" onClick={() => handleSelectItem(null)}>
-            Remove Item
-          </Button>
-          <Input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            type="text"
-            placeholder="Type the item's name..."
-          ></Input>
         </DialogHeader>
-        <Tabs defaultValue="weapon">
+        <Input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          type="text"
+          placeholder="Search item..."
+        ></Input>
+        <Tabs defaultValue="all">
           <TabsList>
-            <TabsTrigger value="weapon">Weapons</TabsTrigger>
-            <TabsTrigger value="armor">Armor</TabsTrigger>
-            <TabsTrigger value="consumable">Consumables</TabsTrigger>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="hands">Hands</TabsTrigger>
+            <TabsTrigger value="head">Head</TabsTrigger>
+            <TabsTrigger value="body">Body</TabsTrigger>
+            <TabsTrigger value="feet">Feet</TabsTrigger>
+            <TabsTrigger value="bag">Bag</TabsTrigger>
           </TabsList>
           <TabsContent
-            value="weapon"
-            className="-mx-4 max-h-[50vh] scrollbar-thumb-amber-100 overflow-y-auto px-4"
+            value="all"
+            className="-mx-4 max-h-[70vh] scrollbar-thumb-amber-100 overflow-y-auto px-4"
           >
-            <ItemGroup className="gap-2">
-              {weaponsList.map((weapon) => (
-                <Item key={weapon.name} variant="outline" asChild>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handleSelectItem(weapon)
-                    }}
-                  >
-                    <ItemMedia>
-                      <Avatar>
-                        <AvatarImage
-                          src={getItemIconUrl(weapon.iconName)}
-                          style={{ imageRendering: "pixelated" }}
-                        />
-                        <AvatarFallback>{weapon.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    </ItemMedia>
-                    <ItemContent>
-                      <ItemTitle>{weapon.name}</ItemTitle>
-                      <ItemDescription>
-                        Weight: {weapon.weight} | Strength: +{weapon.strength}
-                      </ItemDescription>
-                    </ItemContent>
-                  </a>
-                </Item>
+            <ItemGroup className="gap-2 md:grid md:grid-cols-2 lg:grid-cols-3">
+              {searchedItems.map((item) => (
+                <InventoryItem
+                  key={item.key}
+                  item={item}
+                  onClick={() => handleSelectItem(item)}
+                />
               ))}
             </ItemGroup>
-            {weaponsList.length === 0 && (
+            {searchedItems.length === 0 && (
               <p className="py-4 text-center text-xs text-muted-foreground">
-                No weapons found.
+                No item found.
               </p>
             )}
           </TabsContent>
-          <TabsContent
-            value="armor"
-            className="-mx-4 max-h-[50vh] scrollbar-thumb-amber-100 overflow-y-auto px-4"
-          >
-            <ItemGroup className="max-w-sm gap-2">
-              {armorList.map((armor) => (
-                <Item key={armor.name} variant="outline" asChild>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handleSelectItem(armor)
-                    }}
-                  >
-                    <ItemMedia>
-                      <Avatar>
-                        <AvatarImage
-                          src={getItemIconUrl(armor.iconName)}
-                          style={{ imageRendering: "pixelated" }}
-                        />
-                        <AvatarFallback>{armor.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    </ItemMedia>
-                    <ItemContent>
-                      <ItemTitle>{armor.name}</ItemTitle>
-                      <ItemDescription>
-                        Weight: {armor.weight} | Armor: +
-                        {armor.physicalResistance}
-                      </ItemDescription>
-                    </ItemContent>
-                  </a>
-                </Item>
-              ))}
-            </ItemGroup>
-            {armorList.length === 0 && (
-              <p className="py-4 text-center text-xs text-muted-foreground">
-                No armor found.
-              </p>
-            )}
-          </TabsContent>
-          <TabsContent
-            value="consumable"
-            className="-mx-4 max-h-[50vh] scrollbar-thumb-amber-100 overflow-y-auto px-4"
-          >
-            <ItemGroup className="max-w-sm gap-2">
-              {consumablesList.map((consumable) => (
-                <Item key={consumable.name} variant="outline" asChild>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handleSelectItem(consumable)
-                    }}
-                  >
-                    <ItemMedia>
-                      <Avatar>
-                        <AvatarImage
-                          src={getItemIconUrl(consumable.iconName)}
-                          style={{ imageRendering: "pixelated" }}
-                        />
-                        <AvatarFallback>
-                          {consumable.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </ItemMedia>
-                    <ItemContent>
-                      <ItemTitle>{consumable.name}</ItemTitle>
-                      <ItemDescription>
-                        Weight: {consumable.weight}
-                      </ItemDescription>
-                    </ItemContent>
-                  </a>
-                </Item>
-              ))}
-            </ItemGroup>
-            {consumablesList.length === 0 && (
-              <p className="py-4 text-center text-xs text-muted-foreground">
-                No items found.
-              </p>
-            )}
-          </TabsContent>
+          {itemSlotTabs.map((itemSlot: ItemSlotType) => (
+            <TabsContent
+              key={itemSlot}
+              value={itemSlot}
+              className="-mx-4 max-h-[70vh] scrollbar-thumb-amber-100 overflow-y-auto px-4"
+            >
+              <ItemGroup className="gap-2 md:grid md:grid-cols-2 lg:grid-cols-3">
+                {searchedItems
+                  .filter((item) => item.slot === itemSlot)
+                  .map((item) => (
+                    <InventoryItem
+                      key={item.key}
+                      item={item}
+                      onClick={() => handleSelectItem(item)}
+                    />
+                  ))}
+              </ItemGroup>
+            </TabsContent>
+          ))}
         </Tabs>
       </DialogContent>
     </Dialog>
