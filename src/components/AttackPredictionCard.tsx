@@ -17,6 +17,8 @@ import {
 } from "@/utils/combat"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 import { ItemIcon } from "./ItemIcon"
+import { SwordsIcon, UndoIcon } from "lucide-react"
+import { FaHandFist } from "react-icons/fa6"
 
 interface AttackPredictionCardProps {
   attacker: ResolvedCharacter
@@ -28,6 +30,7 @@ interface AttackPredictionCardProps {
   defenderTerrain: TerrainStats
   sideModifier: number
   weather: WeatherType
+  type: "attack" | "counter"
 }
 
 export function AttackPredictionCard({
@@ -40,6 +43,7 @@ export function AttackPredictionCard({
   defenderTerrain,
   sideModifier,
   weather,
+  type,
 }: AttackPredictionCardProps) {
   const adjustedAttacker = getAdjustedStats(
     attacker,
@@ -112,7 +116,7 @@ export function AttackPredictionCard({
   const weaponMultiplier = weapon !== null ? 1.0 : 0.5
 
   const finalHitChance = Math.max(
-    0,
+    1,
     Math.min(
       100,
       Math.trunc((attackerAccuracy * attackCorrection) / 100) -
@@ -156,18 +160,32 @@ export function AttackPredictionCard({
   )
 
   return (
-    <Card className="mx-3 mb-4 border bg-card shadow-sm">
-      <CardHeader className="border-b bg-muted/20 py-3">
-        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-wide text-muted-foreground uppercase">
-          {weapon ? (
-            <>
-              <ItemIcon item={weapon} size={32} />
-              {weapon.name}
-            </>
-           ) : "Punch"}
+    <Card
+      className={`inline-flex flex-col pt-0 ${type === "attack" ? "self-start" : "self-end"} ${type === "attack" ? "bg-blue-500/50" : "bg-red-500/50"}`}
+    >
+      <CardHeader className="border-b-2 py-2">
+        <CardTitle className="flex min-w-fit items-center justify-between gap-2">
+          {type === "counter" && <UndoIcon />}
+          <div className="flex flex-row items-center gap-2 rounded-md text-xl font-bold tracking-tight whitespace-nowrap">
+            {weapon ? (
+              <>
+                <ItemIcon item={weapon} size={32} />
+                {weapon.name}
+              </>
+            ) : (
+              <>
+                <FaHandFist size={16} />
+                Punch
+              </>
+            )}
+          </div>
+          <div className="flex flex-row items-center gap-2 rounded-md text-sm whitespace-nowrap">
+            <SwordsIcon size={16} />
+            {attackPower}
+          </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pt-4">
+      <CardContent>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-4 shadow-sm">
             <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
@@ -187,38 +205,37 @@ export function AttackPredictionCard({
             </span>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-4 border-t pt-2 text-[11px] text-muted-foreground">
-          <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">Attacker Stats</div>
-            <div>
-              Attack Power:{" "}
-              <span className="font-medium text-foreground">{attackPower}</span>
-            </div>
-            <div>
-              Attack Correction:{" "}
-              <span className="font-medium text-foreground">
-                {attackCorrection}%
-              </span>
-            </div>
+      </CardContent>
+      {/* <CardFooter className="grid grid-cols-2 text-[11px] text-muted-foreground">
+        <div className="space-y-0.5">
+          <div className="font-semibold text-foreground">Attacker Stats</div>
+          <div>
+            Attack Power:{" "}
+            <span className="font-medium text-foreground">{attackPower}</span>
           </div>
-          <div className="space-y-0.5 border-l pl-3">
-            <div className="font-semibold text-foreground">Defender Stats</div>
-            <div>
-              Resistance:{" "}
-              <span className="font-medium text-foreground">
-                {defenderResistance}%
-              </span>
-            </div>
-            <div>
-              Defense Correction:{" "}
-              <span className="font-medium text-foreground">
-                {defenseCorrection}%
-              </span>
-            </div>
+          <div>
+            Attack Correction:{" "}
+            <span className="font-medium text-foreground">
+              {attackCorrection}%
+            </span>
           </div>
         </div>
-      </CardContent>
+        <div className="space-y-0.5 border-l pl-3">
+          <div className="font-semibold text-foreground">Defender Stats</div>
+          <div>
+            Resistance:{" "}
+            <span className="font-medium text-foreground">
+              {defenderResistance}%
+            </span>
+          </div>
+          <div>
+            Defense Correction:{" "}
+            <span className="font-medium text-foreground">
+              {defenseCorrection}%
+            </span>
+          </div>
+        </div>
+      </CardFooter> */}
     </Card>
   )
 }

@@ -38,9 +38,9 @@ import {
   type AlignmentType,
   type CharacterStats,
   type ElementType,
-  type EquippableItem,
   type FactionType,
   type GenderType,
+  type ItemKey,
   type ItemSlotType,
   type ResolvedCharacter,
   type SpeciesType,
@@ -60,27 +60,22 @@ import {
   SPECIES,
 } from "@/utils/combat" // Assuming types are located here
 import { useState } from "react"
-import { ITEM_CATALOG } from "@/utils/items"
+import { ITEM_BY_KEY, ITEM_CATALOG } from "@/utils/items"
 import { Field, FieldLabel } from "./ui/field"
 import { InventoryItem } from "./InventoryItem"
 import { ElementIcon } from "./ElementIcon"
 
 interface CharacterCardProps {
   character: ResolvedCharacter
-  onCharacterChange?: (updatedCharacter: CharacterStats) => void
-  equippedItems: (EquippableItem | null)[]
-  onEquippedItemsChange?: (
-    updatedEquippedItems: (EquippableItem | null)[]
-  ) => void
+  onCharacterChange: (updatedCharacter: CharacterStats) => void
 }
 
 export function CharacterCard({
   character,
   onCharacterChange,
-  equippedItems,
-  onEquippedItemsChange,
 }: CharacterCardProps) {
-  const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null)
+  const [activeSlotIndex, setActiveSlotIndex] = useState<number>(0)
+  const [showItemSelection, setShowItemSelection] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>("")
 
   // Helper function to update character attributes dynamically
@@ -92,22 +87,20 @@ export function CharacterCard({
     if (onCharacterChange) onCharacterChange(updated)
   }
 
-  const handleSelectItem = (newItem: EquippableItem) => {
-    const newEquippedItems = equippedItems.map((oldItem, index) => {
-      if (index === activeSlotIndex) return newItem
-      return oldItem
-    })
-    if (onEquippedItemsChange) onEquippedItemsChange(newEquippedItems)
-    setActiveSlotIndex(null)
-    setSearchTerm("")
+  const equippedItems = character.items.map((key) =>
+    key ? ITEM_BY_KEY[key] : null
+  )
+
+  const setItem = (slotIndex: number, newItem: ItemKey | null) => {
+    const updatedItems = character.items.map((oldItem, index) =>
+      index === slotIndex ? newItem : oldItem
+    )
+    onCharacterChange({ ...character, items: updatedItems })
   }
 
-  const clearItemSlot = (slotIndex: number) => {
-    const newEquippedItems = equippedItems.map((oldItem, index) => {
-      if (index === slotIndex) return null
-      return oldItem
-    })
-    if (onEquippedItemsChange) onEquippedItemsChange(newEquippedItems)
+  const handleSelectItem = (selectedItem: ItemKey) => {
+    setItem(activeSlotIndex, selectedItem)
+    setShowItemSelection(false)
   }
 
   const handleClassChange = (classId: string) => {
@@ -155,16 +148,11 @@ export function CharacterCard({
   const itemSlotTabs: ItemSlotType[] = ["hands", "head", "body", "feet", "bag"]
 
   return (
-    <Dialog
-      open={activeSlotIndex !== null}
-      onOpenChange={(open) => {
-        if (!open) setActiveSlotIndex(null)
-      }}
-    >
-      <Card className="mx-auto w-full max-w-sm shadow-md md:max-w-2xl">
+    <Dialog open={showItemSelection}>
+      <Card className="mx-auto w-full max-w-sm shadow-md md:max-w-4xl lg:min-w-xl">
         {/* Editable Header */}
         <CardHeader className="space-y-1 border-b pb-4">
-          <div className="grid grid-cols-2 gap-4 pt-2 md:grid-cols-4 xl:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4 pt-2 md:grid-cols-4">
             <Field>
               <FieldLabel>Faction</FieldLabel>
               <Select
@@ -344,7 +332,7 @@ export function CharacterCard({
 
         {/* Attributes Grid */}
         <CardContent className="pt-6">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4 xl:grid-cols-2">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
             {numericAttributes.map(({ key, label }) => (
               <NumberField
                 key={key}
@@ -363,75 +351,19 @@ export function CharacterCard({
             ))}
           </div>
           <div className="grid grid-cols-4 gap-2 border-t pt-4 text-center">
-            <div className="rounded bg-muted/40 p-2">
-              <div className="text-sm font-bold text-foreground">
-                {attackPower}
-              </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Attack Power
-              </div>
-            </div>
-            <div className="rounded bg-muted/40 p-2">
-              <div className="text-sm font-bold text-foreground">
-                {magicAttack}
-              </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Magic Power
-              </div>
-            </div>
-            <div className="rounded bg-muted/40 p-2">
-              <div className="text-sm font-bold text-foreground">
-                {specialAttack}
-              </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Special Power
-              </div>
-            </div>
-            <div className="rounded bg-muted/40 p-2">
-              <div className="text-sm font-bold text-foreground">
-                {maximumWT}
-              </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Max WT
-              </div>
-            </div>
-            <div className="rounded bg-muted/40 p-2">
-              <div className="text-sm font-bold text-foreground">
-                {defensePower}
-              </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Physical Defense
-              </div>
-            </div>
-            <div className="rounded bg-muted/40 p-2">
-              <div className="text-sm font-bold text-foreground">
-                {magicDefense}
-              </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Magic Defense
-              </div>
-            </div>
-            <div className="rounded bg-muted/40 p-2">
-              <div className="text-sm font-bold text-foreground">
-                {accuracy}
-              </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Accuracy
-              </div>
-            </div>
-            <div className="rounded bg-muted/40 p-2">
-              <div className="text-sm font-bold text-foreground">
-                {evasiveness}
-              </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                Evasiveness
-              </div>
-            </div>
+            <StatBox label="Attack Power" value={attackPower} />
+            <StatBox label="Magic Power" value={magicAttack} />
+            <StatBox label="Special Power" value={specialAttack} />
+            <StatBox label="Max WT" value={maximumWT} />
+            <StatBox label="Physical Defense" value={defensePower} />
+            <StatBox label="Magic Defense" value={magicDefense} />
+            <StatBox label="Accuracy" value={accuracy} />
+            <StatBox label="Evasiveness" value={evasiveness} />
           </div>
           <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
             Inventory
           </h2>
-          <ItemGroup className="md:grid md:grid-cols-2 xl:grid-cols-1">
+          <ItemGroup className="md:grid md:grid-cols-2">
             {[0, 1, 2, 3].map((slotIndex) => {
               const item = equippedItems[slotIndex]
 
@@ -440,9 +372,12 @@ export function CharacterCard({
                   <InventoryItem
                     key={slotIndex}
                     item={item}
-                    onClick={() => setActiveSlotIndex(slotIndex)}
+                    onClick={() => {
+                      setActiveSlotIndex(slotIndex)
+                      setShowItemSelection(true)
+                    }}
                     isRemoveButtonShown={true}
-                    onRemove={() => clearItemSlot(slotIndex)}
+                    onRemove={() => setItem(slotIndex, null)}
                   />
                 )
               }
@@ -453,6 +388,7 @@ export function CharacterCard({
                     onClick={(e) => {
                       e.preventDefault()
                       setActiveSlotIndex(slotIndex)
+                      setShowItemSelection(true)
                     }}
                   >
                     <ItemContent>
@@ -499,7 +435,7 @@ export function CharacterCard({
                 <InventoryItem
                   key={item.key}
                   item={item}
-                  onClick={() => handleSelectItem(item)}
+                  onClick={() => handleSelectItem(item.key)}
                 />
               ))}
             </ItemGroup>
@@ -522,7 +458,7 @@ export function CharacterCard({
                     <InventoryItem
                       key={item.key}
                       item={item}
-                      onClick={() => handleSelectItem(item)}
+                      onClick={() => handleSelectItem(item.key)}
                     />
                   ))}
               </ItemGroup>
@@ -531,5 +467,21 @@ export function CharacterCard({
         </Tabs>
       </DialogContent>
     </Dialog>
+  )
+}
+
+interface StatBoxProps {
+  label: string
+  value: number
+}
+
+function StatBox({ label, value }: StatBoxProps) {
+  return (
+    <div className="rounded bg-muted/40 p-2">
+      <div className="text-sm font-bold text-foreground">{value}</div>
+      <div className="text-[10px] font-bold text-muted-foreground uppercase">
+        {label}
+      </div>
+    </div>
   )
 }

@@ -2,11 +2,10 @@ import { AttackPredictionCard } from "@/components/AttackPredictionCard"
 import { CharacterCard } from "@/components/CharacterCard"
 import {
   Card,
-  CardDescription,
+  CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -16,15 +15,16 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  isIndirectWeapon,
   resolveCharacter,
   type CharacterStats,
-  type EquippableItem,
   type TerrainStats,
   type WeaponStats,
   type WeatherType,
 } from "@/utils/combat"
 import { TERRAINS } from "@/utils/terrains"
-import { useState } from "react"
+import { ArrowDownIcon, ArrowRightIcon, ArrowUpIcon } from "lucide-react"
+import { useEffect, useState } from "react"
 import {
   WiCloudy,
   WiDaySunny,
@@ -32,9 +32,11 @@ import {
   WiSprinkle,
   WiThunderstorm,
 } from "weather-icons-react"
-import { CLASS_CATALOG } from "./utils/classes"
+import { DeleteCharacterDialog } from "./components/DeleteCharacterDialog"
 import { Button } from "./components/ui/button"
 import { Field, FieldLabel } from "./components/ui/field"
+import { CLASS_CATALOG } from "./utils/classes"
+import { ITEM_BY_KEY } from "./utils/items"
 
 const DEFAULT_CHARACTERS: CharacterStats[] = [
   {
@@ -55,6 +57,7 @@ const DEFAULT_CHARACTERS: CharacterStats[] = [
     agility: 125,
     dexterity: 123,
     luck: 50,
+    items: ["baldersd", "balderht", "balderar", "baldersh"],
   },
   {
     id: crypto.randomUUID(),
@@ -74,6 +77,7 @@ const DEFAULT_CHARACTERS: CharacterStats[] = [
     agility: 104,
     dexterity: 102,
     luck: 50,
+    items: ["balderrb", null, null, "balderst"],
   },
   {
     id: crypto.randomUUID(),
@@ -93,6 +97,7 @@ const DEFAULT_CHARACTERS: CharacterStats[] = [
     agility: 118,
     dexterity: 97,
     luck: 50,
+    items: [null, null, null, null],
   },
   {
     id: crypto.randomUUID(),
@@ -112,6 +117,7 @@ const DEFAULT_CHARACTERS: CharacterStats[] = [
     agility: 105,
     dexterity: 114,
     luck: 49,
+    items: [null, null, null, null],
   },
   {
     id: crypto.randomUUID(),
@@ -131,6 +137,7 @@ const DEFAULT_CHARACTERS: CharacterStats[] = [
     agility: 98,
     dexterity: 118,
     luck: 50,
+    items: [null, null, null, null],
   },
   {
     id: crypto.randomUUID(),
@@ -150,6 +157,7 @@ const DEFAULT_CHARACTERS: CharacterStats[] = [
     agility: 130,
     dexterity: 106,
     luck: 50,
+    items: [null, null, null, null],
   },
   {
     id: crypto.randomUUID(),
@@ -169,6 +177,7 @@ const DEFAULT_CHARACTERS: CharacterStats[] = [
     agility: 123,
     dexterity: 126,
     luck: 50,
+    items: [null, null, null, null],
   },
 ]
 
@@ -201,6 +210,7 @@ function createCharacter(rosterNumber?: number): CharacterStats {
     agility: 6,
     dexterity: 6,
     luck: 50,
+    items: [null, null, null, null],
   }
 }
 
@@ -226,12 +236,6 @@ const DIRECTION_MODIFIERS: Record<AttackDirection, number> = {
 export function App() {
   const [characters, setCharacters] = useState<CharacterStats[]>(loadCharacters)
   const [attackerId, setAttackerId] = useState<string>(characters[0].id)
-  const [attackerItems, setAttackerItems] = useState<(EquippableItem | null)[]>(
-    [null, null, null, null]
-  )
-  const [defenderItems, setDefenderItems] = useState<(EquippableItem | null)[]>(
-    [null, null, null, null]
-  )
   const [defenderId, setDefenderId] = useState<string>(characters[1].id)
   const [direction, setDirection] = useState<AttackDirection>("front")
   const [attackerTerrain, setAttackerTerrain] = useState<TerrainStats>(
@@ -241,6 +245,10 @@ export function App() {
     TERRAINS[0]
   )
   const [weather, setWeather] = useState<WeatherType>("sunny")
+
+  useEffect(() => {
+    localStorage.setItem("characters", JSON.stringify(characters))
+  }, [characters])
 
   const updateCharacter = (updated: CharacterStats) => {
     setCharacters((current) =>
@@ -286,32 +294,41 @@ export function App() {
     characters.find((c) => c.id === defenderId) ?? characters[1]
   )
 
+  const attackerItems = attacker.items.map((key) =>
+    key ? ITEM_BY_KEY[key] : null
+  )
+
+  const defenderItems = defender.items.map((key) =>
+    key ? ITEM_BY_KEY[key] : null
+  )
+
   const attackerWeapons = attackerItems.filter(
     (item): item is WeaponStats => item?.type === "weapon"
   )
 
   const defenderPrimaryWeapon =
     defenderItems.find(
-      (item): item is WeaponStats => item !== null && item.type === "weapon"
+      (item): item is WeaponStats => item !== null && item.type === "weapon" && !isIndirectWeapon(item.category)
     ) || null
 
   const sideModifier = DIRECTION_MODIFIERS[direction]
 
+  const canDefenderCounter = attackerWeapons.find(
+    (weapon) => !isIndirectWeapon(weapon.category)
+  )
+
   return (
-    <div className="container mx-auto min-h-screen max-w-400 space-y-6 px-4 py-8">
+    <div className="mx-auto min-h-screen space-y-4 px-4 py-4">
       <header className="border-b pb-4 text-center">
         <h1 className="text-3xl font-black tracking-tight text-primary uppercase">
           Tactics Ogre Attack Simulator
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Tweak statistics on either side to instantly evaluate match-ups.
-        </p>
       </header>
 
-      <main className="grid grid-cols-1 justify-items-center gap-6 xl:grid-cols-4">
-        <div className="space-y-4 lg:col-span-1 max-w-sm md:max-w-2xl">
+      <main className="flex flex-col justify-items-center gap-6 lg:grid-cols-3 lg:flex-row">
+        <div className="space-y-4 lg:col-span-1">
           <Field>
-            <FieldLabel className="text-emerald-500 text-md">
+            <FieldLabel className="text-md text-sky-500">
               Attacker ⚔️
             </FieldLabel>
             <div className="grid w-full grid-cols-2 gap-4">
@@ -332,189 +349,186 @@ export function App() {
                 </SelectContent>
               </Select>
               <div className="flex w-full flex-row gap-2">
-                <Button
-                  variant="default"
-                  className="flex-1"
-                  onClick={() => addCharacter(true)}
-                >
+                <Button variant="default" onClick={() => addCharacter(true)}>
                   Add
                 </Button>
-                <Button
-                  variant="destructive"
-                  className="flex-1"
-                  onClick={() => deleteCharacter(attackerId)}
-                >
-                  Delete
-                </Button>
+                <DeleteCharacterDialog
+                  onConfirm={() => deleteCharacter(attacker.id)}
+                />
               </div>
             </div>
           </Field>
           <CharacterCard
             character={attacker}
             onCharacterChange={updateCharacter}
-            equippedItems={attackerItems}
-            onEquippedItemsChange={(updated) => setAttackerItems(updated)}
           />
         </div>
 
-        <div className="space-y-4 w-full lg:col-span-2 lg:mt-6">
-          <Card className="border-2 border-destructive/30 bg-destructive/5 shadow-lg">
+        <div className="space-y-4 lg:mt-6 lg:min-w-md">
+          <Card className="shadow-lg">
             <CardHeader className="text-center">
               <CardTitle className="text-xl font-bold tracking-wide text-destructive uppercase">
-                Engagement Matrix
-              </CardTitle>
-              <CardDescription>
                 {attacker.name} vs {defender.name}
-              </CardDescription>
-
-              <div className="flex flex-col items-center justify-center space-y-2 pt-4">
-                <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Attack Vector
-                </span>
-                <Tabs
-                  value={direction}
-                  onValueChange={(val) => setDirection(val as AttackDirection)}
-                  className="w-full max-w-xs"
-                >
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="front">Front</TabsTrigger>
-                    <TabsTrigger value="side">Side</TabsTrigger>
-                    <TabsTrigger value="back">Back</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
-              <div className="flex flex-col items-center justify-center space-y-2 pt-4">
-                <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Weather
-                </span>
-                <Tabs
-                  value={weather}
-                  onValueChange={(val) => setWeather(val as WeatherType)}
-                  className="w-full max-w-lg"
-                  orientation="horizontal"
-                >
-                  <TabsList className="w-full">
-                    <TabsTrigger value="sunny">
-                      <WiDaySunny className="text-amber-200" />
-                      Sunny
-                    </TabsTrigger>
-                    <TabsTrigger value="cloudy">
-                      <WiCloudy className="text-white" />
-                      Cloudy
-                    </TabsTrigger>
-                    <TabsTrigger value="light-rain">
-                      <WiSprinkle className="text-sky-200" />
-                      Light R/S
-                    </TabsTrigger>
-                    <TabsTrigger value="rain">
-                      <WiRain className="text-sky-400" />
-                      Rain/Snow
-                    </TabsTrigger>
-                    <TabsTrigger value="heavy-rain">
-                      <WiThunderstorm className="text-indigo-400" />
-                      Heavy R/S
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
-              <div className="mx-auto grid max-w-sm grid-cols-2 gap-4 pt-4 text-left">
-                <div className="space-y-1.5">
-                  <Label>
-                    Attacker Terrain
-                  </Label>
-                  <Select
-                    value={attackerTerrain.name}
-                    onValueChange={(name) =>
-                      setAttackerTerrain(TERRAINS.find((t) => t.name === name)!)
-                    }
-                  >
-                    <SelectTrigger className="bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TERRAINS.map((terrain) => (
-                        <SelectItem key={terrain.name} value={terrain.name}>
-                          {terrain.name} (+{terrain.attackModifier}%)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-muted-foreground uppercase">
-                    Defender Terrain
-                  </Label>
-                  <Select
-                    value={defenderTerrain.name}
-                    onValueChange={(name) =>
-                      setDefenderTerrain(TERRAINS.find((t) => t.name === name)!)
-                    }
-                  >
-                    <SelectTrigger className="bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TERRAINS.map((terrain) => (
-                        <SelectItem key={terrain.name} value={terrain.name}>
-                          {terrain.name} (+{terrain.defenseModifier}%)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              </CardTitle>
             </CardHeader>
-            {attackerWeapons.length === 0 ? (
-              <AttackPredictionCard
-                attacker={attacker}
-                attackerItems={attackerItems}
-                defender={defender}
-                defenderItems={defenderItems}
-                attackerTerrain={attackerTerrain}
-                defenderTerrain={defenderTerrain}
-                weapon={null}
-                sideModifier={sideModifier}
-                weather={weather}
-              />
-            ) : (
-              attackerWeapons.map((weapon) => (
-                <AttackPredictionCard
-                  attacker={attacker}
-                  attackerItems={attackerItems}
-                  defender={defender}
-                  defenderItems={defenderItems}
-                  attackerTerrain={attackerTerrain}
-                  defenderTerrain={defenderTerrain}
-                  weapon={weapon}
-                  sideModifier={sideModifier}
-                  weather={weather}
-                />
-              ))
-            )}
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-12 gap-4">
+                <Field className="col-span-3">
+                  <FieldLabel>Side</FieldLabel>
+                  <Tabs
+                    value={direction}
+                    onValueChange={(val) =>
+                      setDirection(val as AttackDirection)
+                    }
+                    orientation="vertical"
+                  >
+                    <TabsList>
+                      <TabsTrigger value="front">
+                        <ArrowUpIcon />
+                        Front
+                      </TabsTrigger>
+                      <TabsTrigger value="side">
+                        <ArrowRightIcon />
+                        Side
+                      </TabsTrigger>
+                      <TabsTrigger value="back">
+                        <ArrowDownIcon />
+                        Back
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </Field>
+                <Field className="col-span-4">
+                  <FieldLabel>Weather</FieldLabel>
+                  <Tabs
+                    value={weather}
+                    onValueChange={(val) => setWeather(val as WeatherType)}
+                    orientation="vertical"
+                  >
+                    <TabsList className="w-full">
+                      <TabsTrigger value="sunny">
+                        <WiDaySunny className="text-amber-200" />
+                        Sunny
+                      </TabsTrigger>
+                      <TabsTrigger value="cloudy">
+                        <WiCloudy className="text-white" />
+                        Cloudy
+                      </TabsTrigger>
+                      <TabsTrigger value="light-rain">
+                        <WiSprinkle className="text-sky-200" />
+                        Light R/S
+                      </TabsTrigger>
+                      <TabsTrigger value="rain">
+                        <WiRain className="text-sky-400" />
+                        Rain/Snow
+                      </TabsTrigger>
+                      <TabsTrigger value="heavy-rain">
+                        <WiThunderstorm className="text-indigo-400" />
+                        Heavy R/S
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </Field>
+                <div className="col-span-5 flex flex-col gap-4">
+                  <Field>
+                    <FieldLabel>Attacker Terrain</FieldLabel>
+                    <Select
+                      value={attackerTerrain.name}
+                      onValueChange={(name) =>
+                        setAttackerTerrain(
+                          TERRAINS.find((t) => t.name === name)!
+                        )
+                      }
+                    >
+                      <SelectTrigger className="bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TERRAINS.map((terrain) => (
+                          <SelectItem key={terrain.name} value={terrain.name}>
+                            {terrain.name} (+{terrain.attackModifier}%)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Defender Terrain</FieldLabel>
+                    <Select
+                      value={defenderTerrain.name}
+                      onValueChange={(name) =>
+                        setDefenderTerrain(
+                          TERRAINS.find((t) => t.name === name)!
+                        )
+                      }
+                    >
+                      <SelectTrigger className="bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TERRAINS.map((terrain) => (
+                          <SelectItem key={terrain.name} value={terrain.name}>
+                            {terrain.name} (+{terrain.defenseModifier}%)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+              </div>
 
-            <div className="mx-3 pl-1 text-xs font-bold tracking-widest text-sky-500 uppercase">
-              🛡️ Counter Attack
-            </div>
-
-            <AttackPredictionCard
-              attacker={defender}
-              attackerItems={defenderItems}
-              defender={attacker}
-              defenderItems={attackerItems}
-              attackerTerrain={defenderTerrain}
-              defenderTerrain={attackerTerrain}
-              weapon={defenderPrimaryWeapon}
-              sideModifier={DIRECTION_MODIFIERS["front"]}
-              weather={weather}
-            />
+              <div className="pt-4 border-t flex flex-col gap-4">
+                {attackerWeapons.length === 0 ? (
+                  <AttackPredictionCard
+                    attacker={attacker}
+                    attackerItems={attackerItems}
+                    defender={defender}
+                    defenderItems={defenderItems}
+                    attackerTerrain={attackerTerrain}
+                    defenderTerrain={defenderTerrain}
+                    weapon={null}
+                    sideModifier={sideModifier}
+                    weather={weather}
+                    type="attack"
+                  />
+                ) : (
+                  attackerWeapons.map((weapon) => (
+                    <AttackPredictionCard
+                      attacker={attacker}
+                      attackerItems={attackerItems}
+                      defender={defender}
+                      defenderItems={defenderItems}
+                      attackerTerrain={attackerTerrain}
+                      defenderTerrain={defenderTerrain}
+                      weapon={weapon}
+                      sideModifier={sideModifier}
+                      weather={weather}
+                      type="attack"
+                    />
+                  ))
+                )}
+                {canDefenderCounter && (
+                  <AttackPredictionCard
+                    attacker={defender}
+                    attackerItems={defenderItems}
+                    defender={attacker}
+                    defenderItems={attackerItems}
+                    attackerTerrain={defenderTerrain}
+                    defenderTerrain={attackerTerrain}
+                    weapon={defenderPrimaryWeapon}
+                    sideModifier={DIRECTION_MODIFIERS["front"]}
+                    weather={weather}
+                    type="counter"
+                  />
+                )}
+              </div>
+            </CardContent>
           </Card>
         </div>
 
         <div className="space-y-4 lg:col-span-1">
           <Field>
-            <FieldLabel className="text-md text-sky-500">
+            <FieldLabel className="text-md text-red-500">
               Defender 🛡️
             </FieldLabel>
             <div className="grid w-full grid-cols-2 gap-4">
@@ -542,21 +556,16 @@ export function App() {
                 >
                   Add
                 </Button>
-                <Button
-                  variant="destructive"
-                  className="flex-1"
-                  onClick={() => deleteCharacter(defenderId)}
-                >
-                  Delete
-                </Button>
+                <DeleteCharacterDialog
+                  buttonClass="flex-1"
+                  onConfirm={() => deleteCharacter(defender.id)}
+                />
               </div>
             </div>
           </Field>
           <CharacterCard
             character={defender}
             onCharacterChange={updateCharacter}
-            equippedItems={defenderItems}
-            onEquippedItemsChange={(updated) => setDefenderItems(updated)}
           />
         </div>
       </main>

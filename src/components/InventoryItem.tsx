@@ -14,7 +14,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "./ui/item"
-import { type ElementType, type EquippableItem } from "@/utils/combat"
+import { isIndirectWeapon, type ElementType, type EquippableItem } from "@/utils/combat"
 import type { ReactElement } from "react"
 import { Button } from "./ui/button"
 import { ElementIcon } from "./ElementIcon"
@@ -26,7 +26,7 @@ function renderItemStats(item: EquippableItem): ReactElement | string {
       return (
         <>
           <ItemDescription className="flex flex-row items-center gap-0.5">
-            {["bow", "crossbow", "gun"].includes(item.category) ? (
+            {isIndirectWeapon(item.category) ? (
               <BowArrowIcon size={16} />
             ) : (
               <SwordsIcon size={16} />

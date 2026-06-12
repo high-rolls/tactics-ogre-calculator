@@ -1,4 +1,5 @@
 import { CLASS_CATALOG } from "./classes"
+import type { ITEM_CATALOG } from "./items"
 
 export type ElementType = "wind" | "earth" | "fire" | "water" | "holy" | "dark"
 export type FactionType = "player" | "enemy" | "guest"
@@ -34,6 +35,7 @@ export type WeaponCategoryType =
   | "gun"
   | "bow"
   | "crossbow"
+export type ItemKey = (typeof ITEM_CATALOG)[number]["key"]
 
 export interface ElementalResistances {
   wind: number
@@ -77,6 +79,7 @@ export interface CharacterStats {
   dexterity: number
   luck: number
   antiDragon?: boolean
+  items: (ItemKey | null)[]
 }
 
 export interface ResolvedCharacter extends CharacterStats {
@@ -113,6 +116,12 @@ export interface WeaponStats extends BaseItem {
   element?: ElementType
   antiDragon?: boolean
 }
+
+const INDIRECT_WEAPON_CATEGORIES = new Set<WeaponCategoryType>([
+  "bow",
+  "crossbow",
+  "gun",
+])
 
 export interface ArmorStats extends BaseItem {
   type: "armor"
@@ -205,6 +214,10 @@ export const CHARACTER_ALLOWED_ELEMENTS = ELEMENTS.filter(
   (el) => el.key !== "holy" && el.key !== "dark"
 )
 
+export function isIndirectWeapon(category: WeaponCategoryType): boolean {
+  return INDIRECT_WEAPON_CATEGORIES.has(category)
+}
+
 export function resolveCharacter(character: CharacterStats): ResolvedCharacter {
   const classData = Object.values(CLASS_CATALOG).find(
     (c) => c.id === character.classId
@@ -292,9 +305,7 @@ export function calculateMagicDefense(character: CharacterStats): number {
 }
 
 export function calculateSpecialAttack(character: CharacterStats): number {
-  return (
-    (((3 * character.mentality) + 1) >> 1) + ((character.strength + 1) >> 1)
-  )
+  return ((3 * character.mentality + 1) >> 1) + ((character.strength + 1) >> 1)
 }
 
 export function calculatePhysicalResistance(
