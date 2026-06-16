@@ -102,7 +102,7 @@ export interface BaseItem {
   name: string
   description?: string
   weight: number
-  slot: ItemSlotType
+  slot: ItemSlotType | null
   handsRequired: number
   statModifiers?: StatModifiers
   elementalResistances?: Partial<ElementalResistances>
@@ -110,11 +110,12 @@ export interface BaseItem {
 
 export interface WeaponStats extends BaseItem {
   type: "weapon"
-  slot: "hands"
+  slot: "hands" | null
   category: WeaponCategoryType
   strength: number
   element?: ElementType
   antiDragon?: boolean
+  multiplier?: number
 }
 
 const INDIRECT_WEAPON_CATEGORIES = new Set<WeaponCategoryType>([
@@ -240,9 +241,9 @@ export function calculateEquipmentWeight(
 }
 
 export function getAdjustedStats(
-  character: CharacterStats,
+  character: ResolvedCharacter,
   equippedItems: (EquippableItem | null)[]
-): CharacterStats {
+): ResolvedCharacter {
   const statKeys: (keyof StatModifiers)[] = [
     "strength",
     "vitality",

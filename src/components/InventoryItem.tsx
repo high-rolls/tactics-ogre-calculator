@@ -4,6 +4,7 @@ import {
   SwordsIcon,
   WeightIcon,
   BowArrowIcon,
+  PlusIcon,
   /* HandIcon, */
 } from "lucide-react"
 import {
@@ -11,10 +12,13 @@ import {
   ItemActions,
   ItemContent,
   ItemDescription,
-  ItemMedia,
   ItemTitle,
 } from "./ui/item"
-import { isIndirectWeapon, type ElementType, type EquippableItem } from "@/utils/combat"
+import {
+  isIndirectWeapon,
+  type ElementType,
+  type EquippableItem,
+} from "@/utils/combat"
 import type { ReactElement } from "react"
 import { Button } from "./ui/button"
 import { ElementIcon } from "./ElementIcon"
@@ -66,15 +70,16 @@ function renderResistances(item: EquippableItem) {
 
   return Object.entries(item.elementalResistances).map(([element, value]) => (
     <>
-      <ElementIcon element={element as ElementType} size={16} />{value}
+      <ElementIcon element={element as ElementType} size={16} className="-translate-y-0.5" />
+      {value}{" "}
     </>
   ))
 }
 
 interface InventoryItemProps {
-  item: EquippableItem
+  item: EquippableItem | null
   isRemoveButtonShown?: boolean
-  onClick: () => void
+  onClick?: () => void
   onRemove?: () => void
 }
 
@@ -84,21 +89,28 @@ export function InventoryItem({
   onClick,
   onRemove,
 }: InventoryItemProps) {
+  if (item === null) {
+    return (
+      <Item variant="muted" asChild className="min-h-17">
+        <a href="#" onClick={onClick}>
+          <ItemContent>
+            <ItemTitle>Empty Slot</ItemTitle>
+          </ItemContent>
+          <ItemActions>
+            <PlusIcon className="size-4" />
+          </ItemActions>
+        </a>
+      </Item>
+    )
+  }
+
   const statBonuses = renderBonuses(item)
   const elementalResistances = renderResistances(item)
 
   return (
-    <Item key={item.name} variant="outline" asChild role="listitem">
-      <a
-        href="#"
-        onClick={(e) => {
-          e.preventDefault()
-          onClick()
-        }}
-      >
-        <ItemMedia variant="image">
-          <ItemIcon item={item} className="object-cover" />
-        </ItemMedia>
+    <Item variant="outline" asChild role="listitem">
+      <a href="#" onClick={onClick}>
+        <ItemIcon item={item} size={32} />
         <ItemContent>
           <ItemTitle className="gap-0.5">
             {item.name}
@@ -106,29 +118,27 @@ export function InventoryItem({
               <ElementIcon element={item.element} size={16} />
             )}
           </ItemTitle>
-          {item.description && (
+          {statBonuses && (
+            <ItemDescription className="text-xs">{statBonuses}</ItemDescription>
+          )}
+          {elementalResistances && (
             <ItemDescription className="text-xs">
-              {item.description}
+              RES:{elementalResistances}
             </ItemDescription>
           )}
           {item.type === "weapon" && item.antiDragon && (
             <ItemDescription className="text-xs">Dragon slayer</ItemDescription>
           )}
+          {item.description && (
+            <ItemDescription className="text-xs">
+              {item.description}
+            </ItemDescription>
+          )}
         </ItemContent>
-        {(statBonuses || elementalResistances) && (
+        {/* {(statBonuses || elementalResistances) && (
           <ItemContent>
-            {statBonuses && (
-              <ItemDescription className="text-xs">
-                {statBonuses}
-              </ItemDescription>
-            )}
-            {elementalResistances && (
-              <ItemDescription className="flex flex-row text-xs">
-                RES:{elementalResistances}
-              </ItemDescription>
-            )}
           </ItemContent>
-        )}
+        )} */}
 
         <ItemContent>
           {renderItemStats(item)}

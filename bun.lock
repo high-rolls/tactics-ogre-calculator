@@ -7,6 +7,8 @@
       "dependencies": {
         "@base-ui/react": "^1.5.0",
         "@fontsource-variable/geist": "^5.2.9",
+        "@fontsource/forum": "^5.2.8",
+        "@fontsource/lancelot": "^5.2.8",
         "@tailwindcss/vite": "^4.3.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -138,6 +140,10 @@
     "@floating-ui/utils": ["@floating-ui/utils@0.2.11", "", {}, "sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg=="],
 
     "@fontsource-variable/geist": ["@fontsource-variable/geist@5.2.9", "", {}, "sha512-TP+QSBG3wxKGPE33CbMy/L0Nu3qvJ6Fy81Yc4LnQ95xH+i+cfEp8fyU8/kfV14YwszxIFPhnoMTbjL71waVpyQ=="],
+
+    "@fontsource/forum": ["@fontsource/forum@5.2.8", "", {}, "sha512-r2/sOXhL46y6YyDJ4d2zHA+KGsRbaT5d8zC2bgLsOoyBW4WqjpxbjgfHdrRo697LLAsCKryiP9aYSFDcMGu7IQ=="],
+
+    "@fontsource/lancelot": ["@fontsource/lancelot@5.2.8", "", {}, "sha512-3I5jEu2VqN8I6dL99rXP2UeZEnRmG5hVzemE1EP4vkK3Rqe7IM7nRBPRQuuovVDfnk4L8F6MRbDyK5mnp7PwjA=="],
 
     "@hono/node-server": ["@hono/node-server@1.19.14", "", { "peerDependencies": { "hono": "^4" } }, "sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw=="],
 

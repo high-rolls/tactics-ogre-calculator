@@ -1,11 +1,6 @@
 import { AttackPredictionCard } from "@/components/AttackPredictionCard"
 import { CharacterCard } from "@/components/CharacterCard"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -226,6 +221,10 @@ function getNextRosterNumber(characters: CharacterStats[]): number {
   return num
 }
 
+function withDefault<T>(items: T[], defaultItem: T): T[] {
+  return items.length ? items : [defaultItem]
+}
+
 type AttackDirection = "front" | "side" | "back"
 const DIRECTION_MODIFIERS: Record<AttackDirection, number> = {
   front: 0,
@@ -302,20 +301,43 @@ export function App() {
     key ? ITEM_BY_KEY[key] : null
   )
 
-  const attackerWeapons = attackerItems.filter(
-    (item): item is WeaponStats => item?.type === "weapon"
-  )
+  const attackerDirectWeapons = withDefault(
+    attackerItems.filter(
+      (item): item is WeaponStats =>
+        item?.type === "weapon" && !isIndirectWeapon(item.category)
+    ),
+    ITEM_BY_KEY["punch"]
+  ) as WeaponStats[]
 
-  const defenderPrimaryWeapon =
-    defenderItems.find(
-      (item): item is WeaponStats => item !== null && item.type === "weapon" && !isIndirectWeapon(item.category)
-    ) || null
+  const attackerIndirectWeapons = withDefault(
+    attackerItems.filter(
+      (item): item is WeaponStats =>
+        item?.type === "weapon" && isIndirectWeapon(item.category)
+    ),
+    ITEM_BY_KEY["stone"]
+  ) as WeaponStats[]
+
+  const attackerWeapons = [...attackerDirectWeapons, ...attackerIndirectWeapons]
+
+  const defenderDirectWeapons = withDefault(
+    defenderItems.filter(
+      (item): item is WeaponStats =>
+        item?.type === "weapon" && !isIndirectWeapon(item.category)
+    ),
+    ITEM_BY_KEY["punch"]
+  ) as WeaponStats[]
+
+  const defenderIndirectWeapons = withDefault(
+    defenderItems.filter(
+      (item): item is WeaponStats =>
+        item?.type === "weapon" && isIndirectWeapon(item.category)
+    ),
+    ITEM_BY_KEY["stone"]
+  ) as WeaponStats[]
+
+  const defenderWeapons = [...defenderDirectWeapons, ...defenderIndirectWeapons]
 
   const sideModifier = DIRECTION_MODIFIERS[direction]
-
-  const canDefenderCounter = attackerWeapons.find(
-    (weapon) => !isIndirectWeapon(weapon.category)
-  )
 
   return (
     <div className="mx-auto min-h-screen space-y-4 px-4 py-4">
@@ -325,8 +347,8 @@ export function App() {
         </h1>
       </header>
 
-      <main className="flex flex-col justify-items-center gap-6 lg:grid-cols-3 lg:flex-row">
-        <div className="space-y-4 lg:col-span-1">
+      <main className="grid grid-cols-1 justify-items-center gap-2 lg:grid-cols-3">
+        <div className="space-y-4 col-span-1">
           <Field>
             <FieldLabel className="text-md text-sky-500">
               Attacker ⚔️
@@ -364,7 +386,7 @@ export function App() {
           />
         </div>
 
-        <div className="space-y-4 lg:mt-6 lg:min-w-md">
+        <div className="col-span-1 space-y-4 lg:mt-6 lg:min-w-md">
           <Card className="shadow-lg">
             <CardHeader className="text-center">
               <CardTitle className="text-xl font-bold tracking-wide text-destructive uppercase">
@@ -477,22 +499,9 @@ export function App() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t flex flex-col gap-4">
-                {attackerWeapons.length === 0 ? (
-                  <AttackPredictionCard
-                    attacker={attacker}
-                    attackerItems={attackerItems}
-                    defender={defender}
-                    defenderItems={defenderItems}
-                    attackerTerrain={attackerTerrain}
-                    defenderTerrain={defenderTerrain}
-                    weapon={null}
-                    sideModifier={sideModifier}
-                    weather={weather}
-                    type="attack"
-                  />
-                ) : (
-                  attackerWeapons.map((weapon) => (
+              <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-2 gap-3 overflow-y-auto border-t pe-2 pt-4">
+                <div className="flex flex-col gap-2">
+                  {attackerWeapons.map((weapon) => (
                     <AttackPredictionCard
                       attacker={attacker}
                       attackerItems={attackerItems}
@@ -505,22 +514,24 @@ export function App() {
                       weather={weather}
                       type="attack"
                     />
-                  ))
-                )}
-                {canDefenderCounter && (
-                  <AttackPredictionCard
-                    attacker={defender}
-                    attackerItems={defenderItems}
-                    defender={attacker}
-                    defenderItems={attackerItems}
-                    attackerTerrain={defenderTerrain}
-                    defenderTerrain={attackerTerrain}
-                    weapon={defenderPrimaryWeapon}
-                    sideModifier={DIRECTION_MODIFIERS["front"]}
-                    weather={weather}
-                    type="counter"
-                  />
-                )}
+                  ))}
+                </div>
+                <div className="flex flex-col gap-2">
+                  {defenderWeapons.map((weapon) => (
+                    <AttackPredictionCard
+                      attacker={defender}
+                      attackerItems={defenderItems}
+                      defender={attacker}
+                      defenderItems={attackerItems}
+                      attackerTerrain={defenderTerrain}
+                      defenderTerrain={attackerTerrain}
+                      weapon={weapon}
+                      sideModifier={DIRECTION_MODIFIERS["front"]}
+                      weather={weather}
+                      type="counter"
+                    />
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

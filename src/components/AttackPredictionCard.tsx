@@ -7,6 +7,7 @@ import {
   calculateNetElementalResistance,
   calculatePhysicalResistance,
   getAdjustedStats,
+  isIndirectWeapon,
   WEATHER_ALIGNMENT_MODIFIERS,
   type ElementalModifiers,
   type EquippableItem,
@@ -15,17 +16,18 @@ import {
   type WeaponStats,
   type WeatherType,
 } from "@/utils/combat"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { ItemIcon } from "./ItemIcon"
-import { SwordsIcon, UndoIcon } from "lucide-react"
+import { BowArrowIcon, SwordsIcon, XIcon } from "lucide-react"
 import { FaHandFist } from "react-icons/fa6"
+import { ElementIcon } from "./ElementIcon"
 
 interface AttackPredictionCardProps {
   attacker: ResolvedCharacter
   defender: ResolvedCharacter
   attackerItems: (EquippableItem | null)[]
   defenderItems: (EquippableItem | null)[]
-  weapon: WeaponStats | null
+  weapon: WeaponStats
   attackerTerrain: TerrainStats
   defenderTerrain: TerrainStats
   sideModifier: number
@@ -113,7 +115,7 @@ export function AttackPredictionCard({
     )
   )
 
-  const weaponMultiplier = weapon !== null ? 1.0 : 0.5
+  const weaponMultiplier = weapon?.multiplier || 1.0
 
   const finalHitChance = Math.max(
     1,
@@ -161,12 +163,12 @@ export function AttackPredictionCard({
 
   return (
     <Card
-      className={`inline-flex flex-col pt-0 ${type === "attack" ? "self-start" : "self-end"} ${type === "attack" ? "bg-blue-500/50" : "bg-red-500/50"}`}
+      className={`gap-2 pt-0 rounded-md ${type === "attack" ? "justify-self-start" : "justify-self-end"} ${type === "attack" ? "bg-blue-500/50" : "bg-red-500/50"}`}
     >
       <CardHeader className="border-b-2 py-2">
         <CardTitle className="flex min-w-fit items-center justify-between gap-2">
-          {type === "counter" && <UndoIcon />}
-          <div className="flex flex-row items-center gap-2 rounded-md text-xl font-bold tracking-tight whitespace-nowrap">
+          {/* {type === "counter" && <UndoIcon />} */}
+          <div className="flex flex-row items-center gap-2 rounded-md text-2xl font-medium tracking-tighter whitespace-nowrap">
             {weapon ? (
               <>
                 <ItemIcon item={weapon} size={32} />
@@ -179,34 +181,47 @@ export function AttackPredictionCard({
               </>
             )}
           </div>
-          <div className="flex flex-row items-center gap-2 rounded-md text-sm whitespace-nowrap">
-            <SwordsIcon size={16} />
-            {attackPower}
+          <div className="flex flex-row items-center gap-2 text-sm whitespace-nowrap">
+            <div className="flex flex-col items-center">
+              {weapon.element ? (
+                <ElementIcon element={weapon.element} size={16} />
+              ) : (
+              isIndirectWeapon(weapon.category) ? (
+                <BowArrowIcon size={16} />
+              ) : (
+                <SwordsIcon size={16} />
+              ))}
+              {attackPower}
+            </div>
+            <div className="flex flex-col items-center">
+              <XIcon size={16} />
+              {attackCorrection}%
+            </div>
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-4 shadow-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-2 shadow-sm">
+            <span className="mt-1 text-2xl font-black text-destructive">
+              {finalDamage}
+            </span>
             <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
               Damage
             </span>
-            <span className="mt-1 text-4xl font-black text-destructive">
-              {finalDamage}
-            </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-4 shadow-sm">
+          <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-2 shadow-sm">
+            <span className="mt-1 text-2xl font-black text-amber-500">
+              {finalHitChance}%
+            </span>
             <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
               Hit Chance
-            </span>
-            <span className="mt-1 text-4xl font-black text-amber-500">
-              {finalHitChance}%
             </span>
           </div>
         </div>
       </CardContent>
-      {/* <CardFooter className="grid grid-cols-2 text-[11px] text-muted-foreground">
+      <CardFooter className="grid grid-cols-2 text-[11px] text-muted-foreground">
         <div className="space-y-0.5">
           <div className="font-semibold text-foreground">Attacker Stats</div>
           <div>
@@ -235,7 +250,7 @@ export function AttackPredictionCard({
             </span>
           </div>
         </div>
-      </CardFooter> */}
+      </CardFooter>
     </Card>
   )
 }
