@@ -1,5 +1,5 @@
 import { CLASS_CATALOG } from "./classes"
-import type { ITEM_CATALOG } from "./items"
+import { ITEM_BY_KEY, type ITEM_CATALOG } from "./items"
 
 export type ElementType = "wind" | "earth" | "fire" | "water" | "holy" | "dark"
 export type FactionType = "player" | "enemy" | "guest"
@@ -35,6 +35,18 @@ export type WeaponCategoryType =
   | "gun"
   | "bow"
   | "crossbow"
+export type SkillSetType =
+  | "valkyrie"
+  | "wizard"
+  | "shaman"
+  | "lich"
+  | "witch"
+  | "warlock"
+  | "exorcist"
+  | "cleric"
+  | "priest"
+export type AttackDirection = "front" | "side" | "back"
+
 export type ItemKey = (typeof ITEM_CATALOG)[number]["key"]
 
 export interface ElementalResistances {
@@ -58,6 +70,8 @@ export interface CharacterClass {
   movementTypes: MovementType[]
   physicalResistance: number
   baseResistances: ElementalResistances
+  skillSlots?: number
+  skillSet?: SkillSetType
 }
 
 export interface CharacterStats {
@@ -84,6 +98,7 @@ export interface CharacterStats {
 
 export interface ResolvedCharacter extends CharacterStats {
   class: CharacterClass
+  equippedItems: (EquippableItem | null)[]
 }
 
 export interface StatModifiers {
@@ -116,6 +131,14 @@ export interface WeaponStats extends BaseItem {
   element?: ElementType
   antiDragon?: boolean
   multiplier?: number
+}
+
+export interface Skill {
+  type: "damage" | "ailment" | "support" | "healing"
+  element: ElementType
+  alignment: AlignmentType
+  mpCost: number
+  skillSets: SkillSetType[]
 }
 
 const INDIRECT_WEAPON_CATEGORIES = new Set<WeaponCategoryType>([
@@ -181,6 +204,12 @@ export const WEATHER_ALIGNMENT_MODIFIERS: Record<
   },
 }
 
+const DIRECTION_MODIFIERS: Record<AttackDirection, number> = {
+  front: 0,
+  side: 25,
+  back: 50,
+}
+
 export const FACTIONS: { key: FactionType; label: string }[] = [
   { key: "player", label: "Player" },
   { key: "enemy", label: "Enemy" },
@@ -228,9 +257,14 @@ export function resolveCharacter(character: CharacterStats): ResolvedCharacter {
     throw new Error(`Unknown class id ${character.classId}`)
   }
 
+  const equippedItems = character.items.map((key) =>
+    key ? ITEM_BY_KEY[key] : null
+  )
+
   return {
     ...character,
     class: classData,
+    equippedItems: equippedItems,
   }
 }
 
@@ -240,9 +274,8 @@ export function calculateEquipmentWeight(
   return equippedItems.reduce((total, item) => total + (item?.weight || 0), 0)
 }
 
-export function getAdjustedStats(
-  character: ResolvedCharacter,
-  equippedItems: (EquippableItem | null)[]
+export function applyEquipmentStats(
+  character: ResolvedCharacter
 ): ResolvedCharacter {
   const statKeys: (keyof StatModifiers)[] = [
     "strength",
@@ -255,7 +288,7 @@ export function getAdjustedStats(
   ]
   const adjusted = { ...character }
   statKeys.forEach((stat) => {
-    const totalStatModifier = equippedItems.reduce(
+    const totalStatModifier = character.equippedItems.reduce(
       (total, item) => total + (item?.statModifiers?.[stat] || 0),
       0
     )
@@ -264,26 +297,20 @@ export function getAdjustedStats(
   return adjusted
 }
 
-export function calculateAccuracy(
-  character: CharacterStats,
-  equippedItems: (EquippableItem | null)[]
-): number {
+export function calculateAccuracy(character: ResolvedCharacter): number {
   const baseHit = character.agility + ((character.dexterity + 2) >> 2)
-  const totalWeight = calculateEquipmentWeight(equippedItems)
+  const totalWeight = calculateEquipmentWeight(character.equippedItems)
   return baseHit - totalWeight
 }
 
-export function calculateEvasiveness(
-  character: CharacterStats,
-  equippedItems: (EquippableItem | null)[]
-): number {
+export function calculateEvasiveness(character: ResolvedCharacter): number {
   const baseEvasion = character.agility + ((character.dexterity + 2) >> 2)
-  const totalWeight = calculateEquipmentWeight(equippedItems)
+  const totalWeight = calculateEquipmentWeight(character.equippedItems)
   return baseEvasion - totalWeight
 }
 
 export function calculateAttackPower(
-  character: CharacterStats,
+  character: ResolvedCharacter,
   equippedWeapon: WeaponStats | null
 ): number {
   return (
@@ -310,10 +337,9 @@ export function calculateSpecialAttack(character: CharacterStats): number {
 }
 
 export function calculatePhysicalResistance(
-  character: ResolvedCharacter,
-  equippedItems: (EquippableItem | null)[]
+  character: ResolvedCharacter
 ): number {
-  const equippedArmor: ArmorStats[] = equippedItems.filter(
+  const equippedArmor: ArmorStats[] = character.equippedItems.filter(
     (item): item is ArmorStats => item?.type == "armor"
   )
 
@@ -349,8 +375,7 @@ export function calculateElementalMatchup(
 }
 
 export function calculateNetElementalResistance(
-  character: ResolvedCharacter,
-  equippedItems: (EquippableItem | null)[]
+  character: ResolvedCharacter
 ): ElementalResistances {
   const elements: (keyof ElementalResistances)[] = [
     "wind",
@@ -364,7 +389,7 @@ export function calculateNetElementalResistance(
   const netResistances = {} as ElementalResistances
 
   elements.forEach((element) => {
-    const totalResistance = equippedItems.reduce(
+    const totalResistance = character.equippedItems.reduce(
       (total, item) => total + (item?.elementalResistances?.[element] || 0),
       0
     )
@@ -375,12 +400,81 @@ export function calculateNetElementalResistance(
   return netResistances
 }
 
-export function calculateMaxWT(
-  character: ResolvedCharacter,
-  equippedItems: (EquippableItem | null)[]
-) {
-  const equipmentWeight = calculateEquipmentWeight(equippedItems)
+export function calculateMaxWT(character: ResolvedCharacter) {
+  const equipmentWeight = calculateEquipmentWeight(character.equippedItems)
   return (
     510 - character.agility + equipmentWeight + character.class.weightPenalty
+  )
+}
+
+export function calculateCharacterCorrection(
+  character: ResolvedCharacter,
+  terrain: TerrainStats,
+  weather: WeatherType,
+  isAttacker: boolean,
+  withWeatherResistance: boolean = true
+): number {
+  const terrainModifier = isAttacker
+    ? terrain.attackModifier
+    : terrain.defenseModifier
+
+  const terrainElementalModifier =
+    character.element in terrain.elementalModifiers
+      ? terrain.elementalModifiers[
+          character.element as keyof ElementalModifiers
+        ] || 0
+      : 0
+
+  const weatherModifier =
+    WEATHER_ALIGNMENT_MODIFIERS[weather][character.alignment]
+
+  return (
+    50 +
+    terrainModifier +
+    terrainElementalModifier +
+    weatherModifier +
+    (withWeatherResistance ? character.class.weatherResistance : 0)
+  )
+}
+
+export function calculateWeaponCorrection(
+  character: ResolvedCharacter,
+  weapon: WeaponStats
+): number {
+  const weaponElementalModifier =
+    weapon?.element !== undefined
+      ? -10 * calculateElementalMatchup(weapon.element, character.element)
+      : 0
+
+  const preferredWeaponBonus =
+    character.class.preferredWeaponCategory === weapon?.category ? 3 : 0
+
+  const antiDragonBonus =
+    (character.antiDragon ? 8 : 0) + (weapon?.antiDragon ? 8 : 0)
+
+  return weaponElementalModifier + preferredWeaponBonus + antiDragonBonus
+}
+
+export function calculateHitChance(
+  attacker: ResolvedCharacter,
+  defender: ResolvedCharacter,
+  attackCorrection: number,
+  defenseCorrection: number,
+  attackDirection: AttackDirection
+) {
+  const attackerAccuracy = calculateAccuracy(attacker)
+  const defenderEvasiveness = calculateEvasiveness(defender)
+  const sideModifier = DIRECTION_MODIFIERS[attackDirection]
+  return Math.max(
+    1,
+    Math.min(
+      100,
+      Math.trunc((attackerAccuracy * attackCorrection) / 100) -
+        Math.trunc((defenderEvasiveness * defenseCorrection) / 100) +
+        attacker.luck -
+        defender.luck +
+        50 +
+        sideModifier
+    )
   )
 }

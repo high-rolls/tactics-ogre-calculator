@@ -42,7 +42,6 @@ import {
   ELEMENTS,
   FACTIONS,
   GENDERS,
-  getAdjustedStats,
   SPECIES,
 } from "@/utils/combat" // Assuming types are located here
 import { ITEM_BY_KEY, ITEM_CATALOG } from "@/utils/items"
@@ -116,26 +115,16 @@ export function CharacterCard({
     { key: "luck", label: "Luck" },
   ]
 
-  const adjustedCharacter = getAdjustedStats(character, equippedItems)
-  const attackPower = calculateAttackPower(adjustedCharacter, null)
-  const magicAttack = calculateMagicAttack(adjustedCharacter)
-  const accuracy = calculateAccuracy(adjustedCharacter, equippedItems)
-  const defensePower = calculateDefensePower(adjustedCharacter)
-  const magicDefense = calculateMagicDefense(adjustedCharacter)
-  const specialAttack = calculateSpecialAttack(adjustedCharacter)
-  const evasiveness = calculateEvasiveness(adjustedCharacter, equippedItems)
-  const maximumWT = calculateMaxWT(
-    adjustedCharacter as ResolvedCharacter,
-    equippedItems
-  )
-  const physicalResistance = calculatePhysicalResistance(
-    adjustedCharacter,
-    equippedItems
-  )
-  const elementalResistances = calculateNetElementalResistance(
-    adjustedCharacter,
-    equippedItems
-  )
+  const attackPower = calculateAttackPower(character, null)
+  const magicAttack = calculateMagicAttack(character)
+  const accuracy = calculateAccuracy(character)
+  const defensePower = calculateDefensePower(character)
+  const magicDefense = calculateMagicDefense(character)
+  const specialAttack = calculateSpecialAttack(character)
+  const evasiveness = calculateEvasiveness(character)
+  const maximumWT = calculateMaxWT(character)
+  const physicalResistance = calculatePhysicalResistance(character)
+  const elementalResistances = calculateNetElementalResistance(character)
 
   return (
     <Card className="mx-auto w-full max-w-sm shadow-md md:max-w-4xl lg:min-w-xl">

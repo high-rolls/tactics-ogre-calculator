@@ -10,12 +10,15 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  calculateCharacterCorrection,
+  applyEquipmentStats,
   isIndirectWeapon,
   resolveCharacter,
   type CharacterStats,
   type TerrainStats,
   type WeaponStats,
   type WeatherType,
+  type AttackDirection,
 } from "@/utils/combat"
 import { TERRAINS } from "@/utils/terrains"
 import { ArrowDownIcon, ArrowRightIcon, ArrowUpIcon } from "lucide-react"
@@ -225,13 +228,6 @@ function withDefault<T>(items: T[], defaultItem: T): T[] {
   return items.length ? items : [defaultItem]
 }
 
-type AttackDirection = "front" | "side" | "back"
-const DIRECTION_MODIFIERS: Record<AttackDirection, number> = {
-  front: 0,
-  side: 25,
-  back: 50,
-}
-
 export function App() {
   const [characters, setCharacters] = useState<CharacterStats[]>(loadCharacters)
   const [attackerId, setAttackerId] = useState<string>(characters[0].id)
@@ -285,24 +281,19 @@ export function App() {
     }
   }
 
-  const attacker = resolveCharacter(
+  const attacker = applyEquipmentStats(resolveCharacter(
     characters.find((c) => c.id === attackerId) ?? characters[0]
-  )
+  ))
 
-  const defender = resolveCharacter(
+  const defender = applyEquipmentStats(resolveCharacter(
     characters.find((c) => c.id === defenderId) ?? characters[1]
-  )
+  ))
 
-  const attackerItems = attacker.items.map((key) =>
-    key ? ITEM_BY_KEY[key] : null
-  )
-
-  const defenderItems = defender.items.map((key) =>
-    key ? ITEM_BY_KEY[key] : null
-  )
+  const attackerCorrection = calculateCharacterCorrection(attacker, attackerTerrain, weather, true, true)
+  const defenderCorrection = calculateCharacterCorrection(defender, defenderTerrain, weather, false, true)
 
   const attackerDirectWeapons = withDefault(
-    attackerItems.filter(
+    attacker.equippedItems.filter(
       (item): item is WeaponStats =>
         item?.type === "weapon" && !isIndirectWeapon(item.category)
     ),
@@ -310,7 +301,7 @@ export function App() {
   ) as WeaponStats[]
 
   const attackerIndirectWeapons = withDefault(
-    attackerItems.filter(
+    attacker.equippedItems.filter(
       (item): item is WeaponStats =>
         item?.type === "weapon" && isIndirectWeapon(item.category)
     ),
@@ -320,7 +311,7 @@ export function App() {
   const attackerWeapons = [...attackerDirectWeapons, ...attackerIndirectWeapons]
 
   const defenderDirectWeapons = withDefault(
-    defenderItems.filter(
+    defender.equippedItems.filter(
       (item): item is WeaponStats =>
         item?.type === "weapon" && !isIndirectWeapon(item.category)
     ),
@@ -328,7 +319,7 @@ export function App() {
   ) as WeaponStats[]
 
   const defenderIndirectWeapons = withDefault(
-    defenderItems.filter(
+    defender.equippedItems.filter(
       (item): item is WeaponStats =>
         item?.type === "weapon" && isIndirectWeapon(item.category)
     ),
@@ -336,8 +327,6 @@ export function App() {
   ) as WeaponStats[]
 
   const defenderWeapons = [...defenderDirectWeapons, ...defenderIndirectWeapons]
-
-  const sideModifier = DIRECTION_MODIFIERS[direction]
 
   return (
     <div className="mx-auto min-h-screen space-y-4 px-4 py-4">
@@ -504,14 +493,11 @@ export function App() {
                   {attackerWeapons.map((weapon) => (
                     <AttackPredictionCard
                       attacker={attacker}
-                      attackerItems={attackerItems}
                       defender={defender}
-                      defenderItems={defenderItems}
-                      attackerTerrain={attackerTerrain}
-                      defenderTerrain={defenderTerrain}
                       weapon={weapon}
-                      sideModifier={sideModifier}
-                      weather={weather}
+                      attackDirection={direction}
+                      attackerCorrection={attackerCorrection}
+                      defenderCorrection={defenderCorrection}
                       type="attack"
                     />
                   ))}
@@ -520,14 +506,11 @@ export function App() {
                   {defenderWeapons.map((weapon) => (
                     <AttackPredictionCard
                       attacker={defender}
-                      attackerItems={defenderItems}
                       defender={attacker}
-                      defenderItems={attackerItems}
-                      attackerTerrain={defenderTerrain}
-                      defenderTerrain={attackerTerrain}
                       weapon={weapon}
-                      sideModifier={DIRECTION_MODIFIERS["front"]}
-                      weather={weather}
+                      attackDirection="front"
+                      attackerCorrection={defenderCorrection}
+                      defenderCorrection={attackerCorrection}
                       type="counter"
                     />
                   ))}

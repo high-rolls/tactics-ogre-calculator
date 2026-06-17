@@ -1,20 +1,14 @@
 import {
-  calculateAccuracy,
   calculateAttackPower,
   calculateDefensePower,
-  calculateElementalMatchup,
-  calculateEvasiveness,
   calculateNetElementalResistance,
   calculatePhysicalResistance,
-  getAdjustedStats,
+  calculateWeaponCorrection,
   isIndirectWeapon,
-  WEATHER_ALIGNMENT_MODIFIERS,
-  type ElementalModifiers,
-  type EquippableItem,
   type ResolvedCharacter,
-  type TerrainStats,
   type WeaponStats,
-  type WeatherType,
+  calculateHitChance,
+  type AttackDirection,
 } from "@/utils/combat"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { ItemIcon } from "./ItemIcon"
@@ -25,121 +19,44 @@ import { ElementIcon } from "./ElementIcon"
 interface AttackPredictionCardProps {
   attacker: ResolvedCharacter
   defender: ResolvedCharacter
-  attackerItems: (EquippableItem | null)[]
-  defenderItems: (EquippableItem | null)[]
   weapon: WeaponStats
-  attackerTerrain: TerrainStats
-  defenderTerrain: TerrainStats
-  sideModifier: number
-  weather: WeatherType
+  attackDirection: AttackDirection
+  attackerCorrection: number
+  defenderCorrection: number
   type: "attack" | "counter"
 }
 
 export function AttackPredictionCard({
   attacker,
   defender,
-  attackerItems,
-  defenderItems,
   weapon,
-  attackerTerrain,
-  defenderTerrain,
-  sideModifier,
-  weather,
+  attackDirection,
+  attackerCorrection,
+  defenderCorrection,
   type,
 }: AttackPredictionCardProps) {
-  const adjustedAttacker = getAdjustedStats(
-    attacker,
-    attackerItems
-  ) as ResolvedCharacter
-  const adjustedDefender = getAdjustedStats(
-    defender,
-    defenderItems
-  ) as ResolvedCharacter
-
-  const attackerAccuracy = calculateAccuracy(adjustedAttacker, attackerItems)
-  const defenderEvasiveness = calculateEvasiveness(
-    adjustedDefender,
-    defenderItems
-  )
-
-  const weaponElementModifier =
-    weapon?.element !== undefined
-      ? -10 *
-        calculateElementalMatchup(weapon.element, adjustedAttacker.element)
-      : 0
-
-  const attackerTerrainBonus =
-    adjustedAttacker.element in attackerTerrain.elementalModifiers
-      ? attackerTerrain.elementalModifiers[
-          adjustedAttacker.element as keyof ElementalModifiers
-        ] || 0
-      : 0
-
-  const preferredWeaponBonus =
-    adjustedAttacker.class.preferredWeaponCategory === weapon?.category ? 3 : 0
-
-  const antiDragonBonus =
-    (adjustedAttacker.antiDragon ? 8 : 0) + (weapon?.antiDragon ? 8 : 0)
+  const weaponCorrection = calculateWeaponCorrection(attacker, weapon)
 
   const attackCorrection = Math.max(
     0,
     Math.min(
       200,
       50 +
-        attackerTerrain.attackModifier +
-        WEATHER_ALIGNMENT_MODIFIERS[weather][adjustedAttacker.alignment] +
-        (adjustedAttacker.class.weatherResistance || 0) +
-        attackerTerrainBonus +
-        weaponElementModifier +
-        preferredWeaponBonus +
-        antiDragonBonus
+        attackerCorrection +
+        weaponCorrection
     )
   )
 
-  const defenderTerrainBonus =
-    adjustedDefender.element in defenderTerrain.elementalModifiers
-      ? defenderTerrain.elementalModifiers[
-          adjustedDefender.element as keyof ElementalModifiers
-        ] || 0
-      : 0
-
-  const defenseCorrection = Math.max(
-    0,
-    Math.min(
-      200,
-      50 +
-        defenderTerrain.defenseModifier +
-        WEATHER_ALIGNMENT_MODIFIERS[weather][adjustedDefender.alignment] +
-        defenderTerrainBonus +
-        (adjustedDefender.class?.weatherResistance || 0)
-    )
-  )
+  const defenseCorrection = Math.max(0,Math.min(200, 50 + defenderCorrection))
 
   const weaponMultiplier = weapon?.multiplier || 1.0
 
-  const finalHitChance = Math.max(
-    1,
-    Math.min(
-      100,
-      Math.trunc((attackerAccuracy * attackCorrection) / 100) -
-        Math.trunc((defenderEvasiveness * defenseCorrection) / 100) +
-        adjustedAttacker.luck -
-        adjustedDefender.luck +
-        50 +
-        sideModifier
-    )
-  )
+  const finalHitChance = calculateHitChance(attacker, defender, attackCorrection, defenseCorrection, attackDirection)
 
-  const attackPower = calculateAttackPower(adjustedAttacker, weapon)
-  const defensePower = calculateDefensePower(adjustedDefender)
-  const defenderPhysicalResistance = calculatePhysicalResistance(
-    adjustedDefender,
-    defenderItems
-  )
-  const defenderNetResistances = calculateNetElementalResistance(
-    adjustedDefender,
-    defenderItems
-  )
+  const attackPower = calculateAttackPower(attacker, weapon)
+  const defensePower = calculateDefensePower(defender)
+  const defenderPhysicalResistance = calculatePhysicalResistance(defender)
+  const defenderNetResistances = calculateNetElementalResistance(defender)
 
   const defenderResistance =
     weapon?.element === undefined
@@ -156,7 +73,7 @@ export function AttackPredictionCard({
   const finalDamage = Math.max(
     1,
     Math.round(
-      (baseDamage + adjustedAttacker.luck - adjustedDefender.luck) *
+      (baseDamage + attacker.luck - defender.luck) *
         weaponMultiplier
     )
   )
