@@ -336,7 +336,7 @@ export function App() {
         </h1>
       </header>
 
-      <main className="grid grid-cols-1 justify-items-center gap-2 lg:grid-cols-3">
+      <main className="grid grid-cols-1 justify-items-center gap-4 lg:grid-cols-3">
         <div className="space-y-4 col-span-1">
           <Field>
             <FieldLabel className="text-md text-sky-500">
@@ -488,7 +488,7 @@ export function App() {
                 </div>
               </div>
 
-              <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-2 gap-3 overflow-y-auto border-t pe-2 pt-4">
+              <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-2 gap-3 overflow-y-auto border-t pe-2 py-4">
                 <div className="flex flex-col gap-2">
                   {attackerWeapons.map((weapon) => (
                     <AttackPredictionCard
