@@ -140,28 +140,18 @@ export function AttackPredictionCard({
       </CardContent>
       <CardFooter className="grid grid-cols-2 text-[11px] text-muted-foreground">
         <div className="space-y-0.5">
-          <div className="font-semibold text-foreground">Attacker Stats</div>
-          <div>
-            Attack Power:{" "}
-            <span className="font-medium text-foreground">{attackPower}</span>
-          </div>
-          <div>
-            Attack Correction:{" "}
-            <span className="font-medium text-foreground">
-              {attackCorrection}%
-            </span>
-          </div>
+          
         </div>
         <div className="space-y-0.5 border-l pl-3">
-          <div className="font-semibold text-foreground">Defender Stats</div>
+          <div className="font-semibold text-foreground">Defender</div>
           <div>
-            Resistance:{" "}
+            RES:{" "}
             <span className="font-medium text-foreground">
               {defenderResistance}%
             </span>
           </div>
           <div>
-            Defense Correction:{" "}
+            COR:{" "}
             <span className="font-medium text-foreground">
               {defenseCorrection}%
             </span>
