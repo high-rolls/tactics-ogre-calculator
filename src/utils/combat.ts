@@ -35,6 +35,7 @@ export type WeaponCategoryType =
   | "gun"
   | "bow"
   | "crossbow"
+  | "blowgun"
 export type SkillSetType =
   | "valkyrie"
   | "wizard"
@@ -134,6 +135,7 @@ export interface WeaponStats extends BaseItem {
 }
 
 export interface Skill {
+  name: string
   type: "damage" | "ailment" | "support" | "healing"
   element: ElementType
   alignment: AlignmentType
