@@ -22,7 +22,7 @@ import {
 } from "@/utils/combat"
 import { TERRAINS } from "@/utils/terrains"
 import { ArrowDownIcon, ArrowRightIcon, ArrowUpIcon } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   WiCloudy,
   WiDaySunny,
@@ -281,52 +281,120 @@ export function App() {
     }
   }
 
-  const attacker = applyEquipmentStats(resolveCharacter(
-    characters.find((c) => c.id === attackerId) ?? characters[0]
-  ))
+  const attacker = useMemo(() => applyEquipmentStats(
+    resolveCharacter(
+      characters.find((c) => c.id === attackerId) ?? characters[0]
+    )
+  ), [characters, attackerId])
 
-  const defender = applyEquipmentStats(resolveCharacter(
-    characters.find((c) => c.id === defenderId) ?? characters[1]
-  ))
+  const defender = useMemo(() => applyEquipmentStats(
+    resolveCharacter(
+      characters.find((c) => c.id === defenderId) ?? characters[1]
+    )
+  ), [characters, defenderId])
 
-  const attackerCorrection = calculateCharacterCorrection(attacker, attackerTerrain, weather, true, true)
-  const defenderCorrection = calculateCharacterCorrection(defender, defenderTerrain, weather, false, true)
+  const attackerAttackCorrection = useMemo(
+    () =>
+      calculateCharacterCorrection(
+        attacker,
+        attackerTerrain,
+        weather,
+        true,
+        true
+      ),
+    [attacker, attackerTerrain, weather]
+  )
+  const attackerDefenseCorrection = useMemo(
+    () =>
+      calculateCharacterCorrection(
+        attacker,
+        attackerTerrain,
+        weather,
+        false,
+        true
+      ),
+    [attacker, attackerTerrain, weather]
+  )
+  const defenderAttackCorrection = useMemo(
+    () =>
+      calculateCharacterCorrection(
+        defender,
+        defenderTerrain,
+        weather,
+        true,
+        true
+      ),
+    [defender, defenderTerrain, weather]
+  )
+  const defenderDefenseCorrection = useMemo(
+    () =>
+      calculateCharacterCorrection(
+        defender,
+        defenderTerrain,
+        weather,
+        false,
+        true
+      ),
+    [defender, defenderTerrain, weather]
+  )
 
-  const attackerDirectWeapons = withDefault(
-    attacker.equippedItems.filter(
-      (item): item is WeaponStats =>
-        item?.type === "weapon" && !isIndirectWeapon(item.category)
-    ),
-    ITEM_BY_KEY["punch"]
-  ) as WeaponStats[]
+  const attackerDirectWeapons = useMemo(
+    () =>
+      withDefault(
+        attacker.equippedItems.filter(
+          (item): item is WeaponStats =>
+            item?.type === "weapon" && !isIndirectWeapon(item.category)
+        ),
+        ITEM_BY_KEY["punch"]
+      ) as WeaponStats[],
+    [attacker]
+  )
 
-  const attackerIndirectWeapons = withDefault(
-    attacker.equippedItems.filter(
-      (item): item is WeaponStats =>
-        item?.type === "weapon" && isIndirectWeapon(item.category)
-    ),
-    ITEM_BY_KEY["stone"]
-  ) as WeaponStats[]
+  const attackerIndirectWeapons = useMemo(
+    () =>
+      withDefault(
+        attacker.equippedItems.filter(
+          (item): item is WeaponStats =>
+            item?.type === "weapon" && isIndirectWeapon(item.category)
+        ),
+        ITEM_BY_KEY["stone"]
+      ) as WeaponStats[],
+    [attacker]
+  )
 
-  const attackerWeapons = [...attackerDirectWeapons, ...attackerIndirectWeapons]
+  const attackerWeapons = useMemo(
+    () => [...attackerDirectWeapons, ...attackerIndirectWeapons],
+    [attackerDirectWeapons, attackerIndirectWeapons]
+  )
 
-  const defenderDirectWeapons = withDefault(
-    defender.equippedItems.filter(
-      (item): item is WeaponStats =>
-        item?.type === "weapon" && !isIndirectWeapon(item.category)
-    ),
-    ITEM_BY_KEY["punch"]
-  ) as WeaponStats[]
+  const defenderDirectWeapons = useMemo(
+    () =>
+      withDefault(
+        defender.equippedItems.filter(
+          (item): item is WeaponStats =>
+            item?.type === "weapon" && !isIndirectWeapon(item.category)
+        ),
+        ITEM_BY_KEY["punch"]
+      ) as WeaponStats[],
+    [defender]
+  )
 
-  const defenderIndirectWeapons = withDefault(
-    defender.equippedItems.filter(
-      (item): item is WeaponStats =>
-        item?.type === "weapon" && isIndirectWeapon(item.category)
-    ),
-    ITEM_BY_KEY["stone"]
-  ) as WeaponStats[]
+  const defenderIndirectWeapons = useMemo(
+    () =>
+      withDefault(
+        defender.equippedItems.filter(
+          (item): item is WeaponStats =>
+            item?.type === "weapon" && isIndirectWeapon(item.category)
+        ),
+        ITEM_BY_KEY["stone"]
+      ) as WeaponStats[],
+    [defender]
+  )
 
-  const defenderWeapons = [...defenderDirectWeapons, ...defenderIndirectWeapons]
+  const defenderWeapons = useMemo(
+    () => [...defenderDirectWeapons, ...defenderIndirectWeapons],
+    [defenderDirectWeapons, defenderIndirectWeapons]
+  )
 
   return (
     <div className="mx-auto min-h-screen space-y-4 px-4 py-4">
@@ -337,7 +405,7 @@ export function App() {
       </header>
 
       <main className="grid grid-cols-1 justify-items-center gap-4 lg:grid-cols-3">
-        <div className="space-y-4 col-span-1">
+        <div className="col-span-1 space-y-4">
           <Field>
             <FieldLabel className="text-md text-sky-500">
               Attacker ⚔️
@@ -375,7 +443,7 @@ export function App() {
           />
         </div>
 
-        <div className="col-span-1 space-y-4 lg:mt-6 w-full">
+        <div className="col-span-1 w-full space-y-4 lg:mt-6">
           <Card className="shadow-lg">
             <CardHeader className="text-center">
               <CardTitle className="text-xl font-bold tracking-wide text-destructive uppercase">
@@ -440,7 +508,7 @@ export function App() {
                     </TabsList>
                   </Tabs>
                 </Field>
-                <div className="col-span-5 lg:col-span-12 xl:col-span-5 flex flex-col gap-4">
+                <div className="col-span-5 flex flex-col gap-4 lg:col-span-12 xl:col-span-5">
                   <Field>
                     <FieldLabel>Attacker Terrain</FieldLabel>
                     <Select
@@ -455,8 +523,11 @@ export function App() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {TERRAINS.map((terrain) => (
-                          <SelectItem key={terrain.name} value={terrain.name}>
+                        {TERRAINS.map((terrain, index) => (
+                          <SelectItem
+                            key={`attackerTerrain${index}`}
+                            value={terrain.name}
+                          >
                             {terrain.name} (+{terrain.attackModifier}%)
                           </SelectItem>
                         ))}
@@ -467,18 +538,22 @@ export function App() {
                     <FieldLabel>Defender Terrain</FieldLabel>
                     <Select
                       value={defenderTerrain.name}
-                      onValueChange={(name) =>
+                      onValueChange={(name) => {
+                        console.log(name)
                         setDefenderTerrain(
                           TERRAINS.find((t) => t.name === name)!
                         )
-                      }
+                      }}
                     >
                       <SelectTrigger className="bg-background">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {TERRAINS.map((terrain) => (
-                          <SelectItem key={terrain.name} value={terrain.name}>
+                        {TERRAINS.map((terrain, index) => (
+                          <SelectItem
+                            key={`defenderTerrain${index}`}
+                            value={terrain.name}
+                          >
                             {terrain.name} (+{terrain.defenseModifier}%)
                           </SelectItem>
                         ))}
@@ -488,29 +563,29 @@ export function App() {
                 </div>
               </div>
 
-              <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-2 lg:grid-cols-1 gap-3 overflow-y-auto border-t pe-2 py-4">
-                <div className="flex flex-col gap-2">
+              <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-2 gap-3 overflow-y-auto border-t py-4 pe-2 lg:grid-cols-1 2xl:grid-cols-2">
+                <div className="flex flex-col items-start gap-2">
                   {attackerWeapons.map((weapon) => (
                     <AttackPredictionCard
                       attacker={attacker}
                       defender={defender}
                       weapon={weapon}
                       attackDirection={direction}
-                      attackerCorrection={attackerCorrection}
-                      defenderCorrection={defenderCorrection}
+                      attackerCorrection={attackerAttackCorrection}
+                      defenderCorrection={defenderDefenseCorrection}
                       type="attack"
                     />
                   ))}
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col items-end gap-2">
                   {defenderWeapons.map((weapon) => (
                     <AttackPredictionCard
                       attacker={defender}
                       defender={attacker}
                       weapon={weapon}
                       attackDirection="front"
-                      attackerCorrection={defenderCorrection}
-                      defenderCorrection={attackerCorrection}
+                      attackerCorrection={defenderAttackCorrection}
+                      defenderCorrection={attackerDefenseCorrection}
                       type="counter"
                     />
                   ))}

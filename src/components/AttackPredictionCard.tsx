@@ -39,19 +39,20 @@ export function AttackPredictionCard({
 
   const attackCorrection = Math.max(
     0,
-    Math.min(
-      200,
-      50 +
-        attackerCorrection +
-        weaponCorrection
-    )
+    Math.min(200, attackerCorrection + weaponCorrection)
   )
 
-  const defenseCorrection = Math.max(0,Math.min(200, 50 + defenderCorrection))
+  const defenseCorrection = Math.max(0, Math.min(200, defenderCorrection))
 
   const weaponMultiplier = weapon?.multiplier || 1.0
 
-  const finalHitChance = calculateHitChance(attacker, defender, attackCorrection, defenseCorrection, attackDirection)
+  const finalHitChance = calculateHitChance(
+    attacker,
+    defender,
+    attackCorrection,
+    defenseCorrection,
+    attackDirection
+  )
 
   const attackPower = calculateAttackPower(attacker, weapon)
   const defensePower = calculateDefensePower(defender)
@@ -72,15 +73,12 @@ export function AttackPredictionCard({
   )
   const finalDamage = Math.max(
     1,
-    Math.round(
-      (baseDamage + attacker.luck - defender.luck) *
-        weaponMultiplier
-    )
+    Math.round((baseDamage + attacker.luck - defender.luck) * weaponMultiplier)
   )
 
   return (
     <Card
-      className={`gap-2 pt-0 rounded-md ${type === "attack" ? "justify-self-start" : "justify-self-end"} ${type === "attack" ? "bg-blue-500/50" : "bg-red-500/50"}`}
+      className={`max-w-sm min-w-60 gap-2 rounded-md pt-0 ${type === "attack" ? "justify-self-start" : "justify-self-end"} ${type === "attack" ? "bg-blue-500/50" : "bg-red-500/50"}`}
     >
       <CardHeader className="border-b-2 py-2">
         <CardTitle className="flex min-w-fit items-center justify-between gap-2">
@@ -102,12 +100,11 @@ export function AttackPredictionCard({
             <div className="flex flex-col items-center">
               {weapon.element ? (
                 <ElementIcon element={weapon.element} size={16} />
-              ) : (
-              isIndirectWeapon(weapon.category) ? (
+              ) : isIndirectWeapon(weapon.category) ? (
                 <BowArrowIcon size={16} />
               ) : (
                 <SwordsIcon size={16} />
-              ))}
+              )}
               {attackPower}
             </div>
             <div className="flex flex-col items-center">
@@ -139,23 +136,20 @@ export function AttackPredictionCard({
         </div>
       </CardContent>
       <CardFooter className="grid grid-cols-2 text-[11px] text-muted-foreground">
-        <div className="space-y-0.5">
-          
+        <div className="col-span-2 text-center font-semibold text-foreground pb-2">
+          Defender Stats
         </div>
-        <div className="space-y-0.5 border-l pl-3">
-          <div className="font-semibold text-foreground">Defender</div>
-          <div>
-            RES:{" "}
-            <span className="font-medium text-foreground">
-              {defenderResistance}%
-            </span>
-          </div>
-          <div>
-            COR:{" "}
-            <span className="font-medium text-foreground">
-              {defenseCorrection}%
-            </span>
-          </div>
+        <div>
+          RESISTANCE:{" "}
+          <span className="font-medium text-foreground">
+            {defenderResistance}%
+          </span>
+        </div>
+        <div>
+          CORRECTION:{" "}
+          <span className="font-medium text-foreground">
+            {defenseCorrection}%
+          </span>
         </div>
       </CardFooter>
     </Card>

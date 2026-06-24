@@ -79,8 +79,9 @@ export function CharacterCard({
     if (onCharacterChange) onCharacterChange(updated)
   }
 
-  const equippedItems = character.items.map((key) =>
-    key ? ITEM_BY_KEY[key] : null
+  const equippedItems = useMemo(
+    () => character.items.map((key) => (key ? ITEM_BY_KEY[key] : null)),
+    [character]
   )
 
   const setItem = (slotIndex: number, newItem: ItemKey | null) => {
@@ -376,7 +377,7 @@ interface StatBoxProps {
 
 function StatBox({ label, value, icon }: StatBoxProps) {
   return (
-    <div className="flex h-full flex-col items-center justify-center text-center rounded bg-muted/40 p-2">
+    <div className="flex h-full flex-col items-center justify-center rounded bg-muted/40 p-2 text-center">
       {icon}
       <div className="text-sm font-bold text-foreground">{value}</div>
       <div className="text-[10px] font-bold text-muted-foreground uppercase">
