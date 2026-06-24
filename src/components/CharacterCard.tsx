@@ -25,7 +25,6 @@ import {
   type FactionType,
   type GenderType,
   type ItemKey,
-  type ResolvedCharacter,
   type SpeciesType,
   ALIGNMENTS,
   calculateAccuracy,
@@ -42,6 +41,7 @@ import {
   ELEMENTS,
   FACTIONS,
   GENDERS,
+  resolveCharacter,
   SPECIES,
 } from "@/utils/combat" // Assuming types are located here
 import { ITEM_BY_KEY, ITEM_CATALOG } from "@/utils/items"
@@ -52,7 +52,7 @@ import { useMemo, useState, type ReactNode } from "react"
 import { ShieldIcon } from "lucide-react"
 
 interface CharacterCardProps {
-  character: ResolvedCharacter
+  character: CharacterStats
   onCharacterChange: (updatedCharacter: CharacterStats) => void
 }
 
@@ -68,6 +68,22 @@ export function CharacterCard({
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
       ),
     [searchTerm]
+  )
+
+  const allowedClasses = useMemo(
+    () =>
+      Object.values(CLASS_CATALOG).filter(
+        (cls) =>
+          cls.species === character.species &&
+          cls.allowedGenders.includes(character.gender) &&
+          cls.allowedAlignments.includes(character.alignment)
+      ),
+    [character]
+  )
+
+  const resolvedCharacter = useMemo(
+    () => resolveCharacter(character),
+    [character]
   )
 
   // Helper function to update character attributes dynamically
@@ -116,23 +132,17 @@ export function CharacterCard({
     { key: "luck", label: "Luck" },
   ]
 
-  const attackPower = calculateAttackPower(character, null)
+  const attackPower = calculateAttackPower(resolvedCharacter, null)
   const magicAttack = calculateMagicAttack(character)
-  const accuracy = calculateAccuracy(character)
+  const accuracy = calculateAccuracy(resolvedCharacter)
   const defensePower = calculateDefensePower(character)
   const magicDefense = calculateMagicDefense(character)
   const specialAttack = calculateSpecialAttack(character)
-  const evasiveness = calculateEvasiveness(character)
-  const maximumWT = calculateMaxWT(character)
-  const physicalResistance = calculatePhysicalResistance(character)
-  const elementalResistances = calculateNetElementalResistance(character)
-
-  const allowedClasses = Object.values(CLASS_CATALOG).filter(
-    (cls) =>
-      cls.species === character.species &&
-      cls.allowedGenders.includes(character.gender) &&
-      cls.allowedAlignments.includes(character.alignment)
-  )
+  const evasiveness = calculateEvasiveness(resolvedCharacter)
+  const maximumWT = calculateMaxWT(resolvedCharacter)
+  const physicalResistance = calculatePhysicalResistance(resolvedCharacter)
+  const elementalResistances =
+    calculateNetElementalResistance(resolvedCharacter)
 
   return (
     <Card className="mx-auto w-full max-w-sm shadow-md md:max-w-4xl">

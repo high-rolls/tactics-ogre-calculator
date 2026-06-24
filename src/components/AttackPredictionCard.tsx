@@ -15,6 +15,7 @@ import { ItemIcon } from "./ItemIcon"
 import { BowArrowIcon, SwordsIcon, XIcon } from "lucide-react"
 import { FaHandFist } from "react-icons/fa6"
 import { ElementIcon } from "./ElementIcon"
+import { useMemo } from "react"
 
 interface AttackPredictionCardProps {
   attacker: ResolvedCharacter
@@ -35,45 +36,88 @@ export function AttackPredictionCard({
   defenderCorrection,
   type,
 }: AttackPredictionCardProps) {
-  const weaponCorrection = calculateWeaponCorrection(attacker, weapon)
-
-  const attackCorrection = Math.max(
-    0,
-    Math.min(200, attackerCorrection + weaponCorrection)
+  const weaponCorrection = useMemo(
+    () => calculateWeaponCorrection(attacker, weapon),
+    [attacker, weapon]
   )
 
-  const defenseCorrection = Math.max(0, Math.min(200, defenderCorrection))
-
-  const weaponMultiplier = weapon?.multiplier || 1.0
-
-  const finalHitChance = calculateHitChance(
-    attacker,
-    defender,
-    attackCorrection,
-    defenseCorrection,
-    attackDirection
+  const attackCorrection = useMemo(
+    () => Math.max(0, Math.min(200, attackerCorrection + weaponCorrection)),
+    [attackerCorrection, weaponCorrection]
   )
 
-  const attackPower = calculateAttackPower(attacker, weapon)
-  const defensePower = calculateDefensePower(defender)
-  const defenderPhysicalResistance = calculatePhysicalResistance(defender)
-  const defenderNetResistances = calculateNetElementalResistance(defender)
-
-  const defenderResistance =
-    weapon?.element === undefined
-      ? defenderPhysicalResistance
-      : defenderNetResistances[weapon.element]
-
-  // Basic attack damage vs base defense check
-  const baseDamage = Math.trunc(
-    ((Math.trunc((attackPower * attackCorrection) / 100) -
-      Math.trunc((defensePower * defenseCorrection) / 100)) *
-      defenderResistance) /
-      100
+  const defenseCorrection = useMemo(
+    () => Math.max(0, Math.min(200, defenderCorrection)),
+    [defenderCorrection]
   )
-  const finalDamage = Math.max(
-    1,
-    Math.round((baseDamage + attacker.luck - defender.luck) * weaponMultiplier)
+
+  const weaponMultiplier = useMemo(() => weapon?.multiplier || 1.0, [weapon])
+
+  const finalHitChance = useMemo(
+    () =>
+      calculateHitChance(
+        attacker,
+        defender,
+        attackCorrection,
+        defenseCorrection,
+        attackDirection
+      ),
+    [attacker, defender, attackCorrection, defenseCorrection, attackDirection]
+  )
+
+  const attackPower = useMemo(
+    () => calculateAttackPower(attacker, weapon),
+    [attacker, weapon]
+  )
+
+  const defensePower = useMemo(
+    () => calculateDefensePower(defender),
+    [defender]
+  )
+
+  const defenderPhysicalResistance = useMemo(
+    () => calculatePhysicalResistance(defender),
+    [defender]
+  )
+
+  const defenderNetResistances = useMemo(
+    () => calculateNetElementalResistance(defender),
+    [defender]
+  )
+
+  const defenderResistance = useMemo(
+    () =>
+      weapon?.element === undefined
+        ? defenderPhysicalResistance
+        : defenderNetResistances[weapon.element],
+    [weapon, defenderPhysicalResistance, defenderNetResistances]
+  )
+
+  const baseDamage = useMemo(
+    () =>
+      Math.trunc(
+        ((Math.trunc((attackPower * attackCorrection) / 100) -
+          Math.trunc((defensePower * defenseCorrection) / 100)) *
+          defenderResistance) /
+          100
+      ),
+    [
+      attackPower,
+      attackCorrection,
+      defensePower,
+      defenseCorrection,
+      defenderResistance,
+    ]
+  )
+  const finalDamage = useMemo(
+    () =>
+      Math.max(
+        1,
+        Math.round(
+          (baseDamage + attacker.luck - defender.luck) * weaponMultiplier
+        )
+      ),
+    [baseDamage, attacker, defender, weaponMultiplier]
   )
 
   return (
@@ -136,7 +180,7 @@ export function AttackPredictionCard({
         </div>
       </CardContent>
       <CardFooter className="grid grid-cols-2 text-[11px] text-muted-foreground">
-        <div className="col-span-2 text-center font-semibold text-foreground pb-2">
+        <div className="col-span-2 pb-2 text-center font-semibold text-foreground">
           Defender Stats
         </div>
         <div>

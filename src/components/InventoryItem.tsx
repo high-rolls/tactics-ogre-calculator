@@ -19,7 +19,7 @@ import {
   type ElementType,
   type EquippableItem,
 } from "@/utils/combat"
-import type { ReactElement } from "react"
+import { useMemo, type ReactElement } from "react"
 import { Button } from "./ui/button"
 import { ElementIcon } from "./ElementIcon"
 import { ItemIcon } from "./ItemIcon"
@@ -57,20 +57,24 @@ function renderItemStats(item: EquippableItem): ReactElement | string {
   }
 }
 
-function renderBonuses(item: EquippableItem) {
-  if (!item.statModifiers) return null
+function renderBonuses(item: EquippableItem | null) {
+  if (!item?.statModifiers) return null
 
   return Object.entries(item.statModifiers)
     .map(([stat, value]) => `${stat.slice(0, 3).toUpperCase()}+${value}`)
     .join(" ")
 }
 
-function renderResistances(item: EquippableItem) {
-  if (!item.elementalResistances) return null
+function renderResistances(item: EquippableItem | null) {
+  if (!item?.elementalResistances) return null
 
   return Object.entries(item.elementalResistances).map(([element, value]) => (
     <>
-      <ElementIcon element={element as ElementType} size={16} className="-translate-y-0.5" />
+      <ElementIcon
+        element={element as ElementType}
+        size={16}
+        className="-translate-y-0.5"
+      />
       {value}{" "}
     </>
   ))
@@ -89,6 +93,9 @@ export function InventoryItem({
   onClick,
   onRemove,
 }: InventoryItemProps) {
+  const statBonuses = useMemo(() => renderBonuses(item), [item])
+  const elementalResistances = useMemo(() => renderResistances(item), [item])
+
   if (item === null) {
     return (
       <Item variant="muted" asChild className="min-h-17">
@@ -103,9 +110,6 @@ export function InventoryItem({
       </Item>
     )
   }
-
-  const statBonuses = renderBonuses(item)
-  const elementalResistances = renderResistances(item)
 
   return (
     <Item variant="outline" asChild role="listitem">
