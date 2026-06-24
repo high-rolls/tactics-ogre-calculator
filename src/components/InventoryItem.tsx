@@ -151,7 +151,7 @@ export function InventoryItem({
           <ItemActions>
             <Button
               variant="outline"
-              size="icon-sm"
+              size="icon-xs"
               className="rounded-full"
               onClick={(e) => {
                 e.preventDefault()

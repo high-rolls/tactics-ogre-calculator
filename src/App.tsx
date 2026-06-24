@@ -375,7 +375,7 @@ export function App() {
           />
         </div>
 
-        <div className="col-span-1 space-y-4 lg:mt-6 lg:min-w-md">
+        <div className="col-span-1 space-y-4 lg:mt-6 w-full">
           <Card className="shadow-lg">
             <CardHeader className="text-center">
               <CardTitle className="text-xl font-bold tracking-wide text-destructive uppercase">
@@ -384,7 +384,7 @@ export function App() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-12 gap-4">
-                <Field className="col-span-3">
+                <Field className="col-span-3 lg:col-span-5 xl:col-span-3">
                   <FieldLabel>Side</FieldLabel>
                   <Tabs
                     value={direction}
@@ -409,7 +409,7 @@ export function App() {
                     </TabsList>
                   </Tabs>
                 </Field>
-                <Field className="col-span-4">
+                <Field className="col-span-4 lg:col-span-7 xl:col-span-4">
                   <FieldLabel>Weather</FieldLabel>
                   <Tabs
                     value={weather}
@@ -440,7 +440,7 @@ export function App() {
                     </TabsList>
                   </Tabs>
                 </Field>
-                <div className="col-span-5 flex flex-col gap-4">
+                <div className="col-span-5 lg:col-span-12 xl:col-span-5 flex flex-col gap-4">
                   <Field>
                     <FieldLabel>Attacker Terrain</FieldLabel>
                     <Select
@@ -488,7 +488,7 @@ export function App() {
                 </div>
               </div>
 
-              <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-2 gap-3 overflow-y-auto border-t pe-2 py-4">
+              <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-2 lg:grid-cols-1 gap-3 overflow-y-auto border-t pe-2 py-4">
                 <div className="flex flex-col gap-2">
                   {attackerWeapons.map((weapon) => (
                     <AttackPredictionCard

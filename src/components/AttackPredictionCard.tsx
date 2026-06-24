@@ -133,7 +133,7 @@ export function AttackPredictionCard({
               {finalHitChance}%
             </span>
             <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-              Hit Chance
+              Hit
             </span>
           </div>
         </div>

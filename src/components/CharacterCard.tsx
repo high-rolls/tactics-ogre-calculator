@@ -126,11 +126,18 @@ export function CharacterCard({
   const physicalResistance = calculatePhysicalResistance(character)
   const elementalResistances = calculateNetElementalResistance(character)
 
+  const allowedClasses = Object.values(CLASS_CATALOG).filter(
+    (cls) =>
+      cls.species === character.species &&
+      cls.allowedGenders.includes(character.gender) &&
+      cls.allowedAlignments.includes(character.alignment)
+  )
+
   return (
-    <Card className="mx-auto w-full max-w-sm shadow-md md:max-w-4xl lg:min-w-xl">
+    <Card className="mx-auto w-full max-w-sm shadow-md md:max-w-4xl">
       {/* Editable Header */}
       <CardHeader className="space-y-1 border-b pb-4">
-        <div className="grid grid-cols-2 gap-4 pt-2 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 pt-2 md:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">
           <Field>
             <FieldLabel>Faction</FieldLabel>
             <Select
@@ -276,7 +283,7 @@ export function CharacterCard({
               </SelectTrigger>
               <SelectContent position="popper">
                 <SelectGroup>
-                  {Object.values(CLASS_CATALOG).map((cls) => (
+                  {allowedClasses.map((cls) => (
                     <SelectItem key={cls.id} value={cls.id.toString()}>
                       {cls.name}
                     </SelectItem>
@@ -290,7 +297,7 @@ export function CharacterCard({
 
       {/* Attributes Grid */}
       <CardContent className="pt-6">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">
           {numericAttributes.map(({ key, label }) => (
             <NumberField
               key={key}
@@ -321,7 +328,7 @@ export function CharacterCard({
         <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
           Resistances
         </h2>
-        <div className="grid grid-cols-7 gap-2 text-center">
+        <div className="grid grid-cols-7 gap-2 text-center lg:grid-cols-4 2xl:grid-cols-7">
           <StatBox
             label="Phys."
             value={physicalResistance}
@@ -339,7 +346,7 @@ export function CharacterCard({
         <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
           Inventory
         </h2>
-        <ItemGroup className="md:grid md:grid-cols-2">
+        <ItemGroup className="md:grid md:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
           {[0, 1, 2, 3].map((slotIndex) => {
             const item = equippedItems[slotIndex]
 
@@ -369,7 +376,7 @@ interface StatBoxProps {
 
 function StatBox({ label, value, icon }: StatBoxProps) {
   return (
-    <div className="flex h-full flex-col items-center justify-center rounded bg-muted/40 p-2">
+    <div className="flex h-full flex-col items-center justify-center text-center rounded bg-muted/40 p-2">
       {icon}
       <div className="text-sm font-bold text-foreground">{value}</div>
       <div className="text-[10px] font-bold text-muted-foreground uppercase">
