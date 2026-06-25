@@ -1,20 +1,23 @@
+import { ElementIcon } from "@/components/ElementIcon"
+import { ItemIcon } from "@/components/ItemIcon"
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import {
   calculateAttackPower,
   calculateDefensePower,
+  calculateHitChance,
   calculateNetElementalResistance,
   calculatePhysicalResistance,
   calculateWeaponCorrection,
   isIndirectWeapon,
+  type AttackDirection,
   type ResolvedCharacter,
   type WeaponStats,
-  calculateHitChance,
-  type AttackDirection,
 } from "@/utils/combat"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
-import { ItemIcon } from "./ItemIcon"
 import { BowArrowIcon, SwordsIcon, XIcon } from "lucide-react"
-import { FaHandFist } from "react-icons/fa6"
-import { ElementIcon } from "./ElementIcon"
 import { useMemo } from "react"
 
 interface AttackPredictionCardProps {
@@ -24,7 +27,7 @@ interface AttackPredictionCardProps {
   attackDirection: AttackDirection
   attackerCorrection: number
   defenderCorrection: number
-  type: "attack" | "counter"
+  className?: string
 }
 
 export function AttackPredictionCard({
@@ -34,7 +37,7 @@ export function AttackPredictionCard({
   attackDirection,
   attackerCorrection,
   defenderCorrection,
-  type,
+  className,
 }: AttackPredictionCardProps) {
   const weaponCorrection = useMemo(
     () => calculateWeaponCorrection(attacker, weapon),
@@ -50,8 +53,6 @@ export function AttackPredictionCard({
     () => Math.max(0, Math.min(200, defenderCorrection)),
     [defenderCorrection]
   )
-
-  const weaponMultiplier = useMemo(() => weapon?.multiplier || 1.0, [weapon])
 
   const finalHitChance = useMemo(
     () =>
@@ -109,38 +110,30 @@ export function AttackPredictionCard({
       defenderResistance,
     ]
   )
-  const finalDamage = useMemo(
-    () =>
-      Math.max(
-        1,
-        Math.round(
-          (baseDamage + attacker.luck - defender.luck) * weaponMultiplier
-        )
-      ),
-    [baseDamage, attacker, defender, weaponMultiplier]
-  )
+  const finalDamage = useMemo(() => {
+    const rawDamage =
+      (baseDamage + attacker.luck - defender.luck) * (weapon?.multiplier || 1.0)
+    return Math.max(
+      1,
+      weapon.roundingFunction
+        ? weapon.roundingFunction(rawDamage)
+        : Math.round(rawDamage)
+    )
+  }, [baseDamage, attacker, defender, weapon])
 
   return (
-    <Card
-      className={`max-w-sm min-w-60 gap-2 rounded-md pt-0 ${type === "attack" ? "justify-self-start" : "justify-self-end"} ${type === "attack" ? "bg-blue-500/50" : "bg-red-500/50"}`}
-    >
-      <CardHeader className="border-b-2 py-2">
-        <CardTitle className="flex min-w-fit items-center justify-between gap-2">
-          {/* {type === "counter" && <UndoIcon />} */}
-          <div className="flex flex-row items-center gap-2 rounded-md text-2xl font-medium tracking-tighter whitespace-nowrap">
-            {weapon ? (
-              <>
-                <ItemIcon item={weapon} size={32} />
-                {weapon.name}
-              </>
-            ) : (
-              <>
-                <FaHandFist size={16} />
-                Punch
-              </>
+    <Card className={cn("w-full max-w-xs", className)}>
+      <CardContent className="flex flex-col gap-3 items-center">
+        <div className="flex flex-row w-full items-center justify-between">
+          <div className="flex items-center gap-2">
+            {weapon.slot && (
+              <div className="flex size-11 items-center justify-center rounded-sm bg-amber-200 [&_img]:size-8">
+                <ItemIcon item={weapon} />
+              </div>
             )}
+            <h1 className="text-lg">{weapon.name}</h1>
           </div>
-          <div className="flex flex-row items-center gap-2 text-sm whitespace-nowrap">
+          <div className="flex flex-row gap-1 text-xs text-muted-foreground">
             <div className="flex flex-col items-center">
               {weapon.element ? (
                 <ElementIcon element={weapon.element} size={16} />
@@ -156,46 +149,29 @@ export function AttackPredictionCard({
               {attackCorrection}%
             </div>
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-2">
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 w-full sm:grid-cols-2">
           <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-2 shadow-sm">
-            <span className="mt-1 text-2xl font-black text-destructive">
+            <span className="mt-1 text-xl font-black text-destructive">
               {finalDamage}
             </span>
-            <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Damage
             </span>
           </div>
 
+
           <div className="flex flex-col items-center justify-center rounded-lg border bg-background p-2 shadow-sm">
-            <span className="mt-1 text-2xl font-black text-amber-500">
+            <span className="mt-1 text-xl font-black text-amber-500">
               {finalHitChance}%
             </span>
-            <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-              Hit
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Hit Chance
             </span>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="grid grid-cols-2 text-[11px] text-muted-foreground">
-        <div className="col-span-2 pb-2 text-center font-semibold text-foreground">
-          Defender Stats
-        </div>
-        <div>
-          RESISTANCE:{" "}
-          <span className="font-medium text-foreground">
-            {defenderResistance}%
-          </span>
-        </div>
-        <div>
-          CORRECTION:{" "}
-          <span className="font-medium text-foreground">
-            {defenseCorrection}%
-          </span>
-        </div>
-      </CardFooter>
     </Card>
   )
 }

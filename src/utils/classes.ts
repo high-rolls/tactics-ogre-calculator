@@ -99,6 +99,8 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
       holy: 85,
       dark: 100,
     },
+    specialTraits: ["attack-plus"],
+    indirectAttack: "accuse"
   },
   dragoon: {
     id: 0x06,
@@ -139,6 +141,8 @@ export const CLASS_CATALOG: Record<string, CharacterClass> = {
       holy: 100,
       dark: 100,
     },
+    specialTraits: ["attack-plus"],
+    indirectAttack: "shuriken"
   },
   beastTamer: {
     id: 0x08,

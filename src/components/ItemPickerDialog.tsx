@@ -63,7 +63,7 @@ export function ItemPickerDialog({
             value="all"
             className="-mx-4 max-h-[70vh] scrollbar-thumb-amber-100 overflow-y-auto px-4"
           >
-            <ItemGroup className="gap-2 md:grid md:grid-cols-2 lg:grid-cols-3">
+            <ItemGroup className="gap-2 grid md:grid-cols-2 lg:grid-cols-3">
               {searchedItems.map((item) => (
                 <DialogClose key={item.key}>
                   <InventoryItem
@@ -85,7 +85,7 @@ export function ItemPickerDialog({
               value={itemSlot}
               className="-mx-4 max-h-[70vh] scrollbar-thumb-amber-100 overflow-y-auto px-4"
             >
-              <ItemGroup className="gap-2 md:grid md:grid-cols-2 lg:grid-cols-3">
+              <ItemGroup className="gap-2 grid md:grid-cols-2 lg:grid-cols-3">
                 {searchedItems
                   .filter((item) => item.slot === itemSlot)
                   .map((item) => (

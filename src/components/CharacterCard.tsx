@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ItemGroup } from "@/components/ui/item"
 import {
@@ -50,6 +50,7 @@ import { ElementIcon } from "./ElementIcon"
 import { ItemPickerDialog } from "./ItemPickerDialog"
 import { useMemo, useState, type ReactNode } from "react"
 import { ShieldIcon } from "lucide-react"
+import { Separator } from "./ui/separator"
 
 interface CharacterCardProps {
   character: CharacterStats
@@ -64,8 +65,10 @@ export function CharacterCard({
 
   const searchedItems = useMemo(
     () =>
-      ITEM_CATALOG.filter((item) =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ITEM_CATALOG.filter(
+        (item) =>
+          item.slot !== null &&
+          item.name.toLowerCase().includes(searchTerm.toLowerCase())
       ),
     [searchTerm]
   )
@@ -145,10 +148,9 @@ export function CharacterCard({
     calculateNetElementalResistance(resolvedCharacter)
 
   return (
-    <Card className="mx-auto w-full max-w-sm shadow-md md:max-w-4xl">
-      {/* Editable Header */}
-      <CardHeader className="space-y-1 border-b pb-4">
-        <div className="grid grid-cols-2 gap-4 pt-2 md:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">
+    <Card className="mx-auto w-full max-w-4xl shadow-md">
+      <CardContent className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-4 pt-2 @lg:grid-cols-4">
           <Field>
             <FieldLabel>Faction</FieldLabel>
             <Select
@@ -193,6 +195,7 @@ export function CharacterCard({
               value={character.name}
               onChange={(e) => updateAttribute("name", e.target.value)}
               placeholder="Enter character name..."
+              className="text-sm"
             />
           </Field>
           <Field>
@@ -304,11 +307,8 @@ export function CharacterCard({
             </Select>
           </Field>
         </div>
-      </CardHeader>
-
-      {/* Attributes Grid */}
-      <CardContent className="pt-6">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">
+        <Separator />
+        <div className="grid grid-cols-2 gap-4 @lg:grid-cols-4">
           {numericAttributes.map(({ key, label }) => (
             <NumberField
               key={key}
@@ -326,54 +326,63 @@ export function CharacterCard({
             </NumberField>
           ))}
         </div>
-        <div className="grid grid-cols-4 gap-2 border-t pt-4">
-          <StatBox label="Attack Power" value={attackPower} />
-          <StatBox label="Magic Power" value={magicAttack} />
-          <StatBox label="Special Power" value={specialAttack} />
-          <StatBox label="Max WT" value={maximumWT} />
-          <StatBox label="Physical Defense" value={defensePower} />
-          <StatBox label="Magic Defense" value={magicDefense} />
-          <StatBox label="Accuracy" value={accuracy} />
-          <StatBox label="Evasiveness" value={evasiveness} />
-        </div>
-        <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
-          Resistances
-        </h2>
-        <div className="grid grid-cols-7 gap-2 text-center lg:grid-cols-4 2xl:grid-cols-7">
-          <StatBox
-            label="Phys."
-            value={physicalResistance}
-            icon={<ShieldIcon className="text-muted-foreground" size={16} />}
-          />
-          {ELEMENTS.map(({ key, label }) => (
+        <Separator />
+        <div>
+          <h2 className="mb-2 text-xs tracking-wider text-muted-foreground uppercase">
+            Derived Stats
+          </h2>
+          <div className="grid grid-cols-4 gap-1">
+            <StatBox label="Attack Power" value={attackPower} />
+            <StatBox label="Magic Power" value={magicAttack} />
+            <StatBox label="Special Power" value={specialAttack} />
+            <StatBox label="Max WT" value={maximumWT} />
+            <StatBox label="Physical Defense" value={defensePower} />
+            <StatBox label="Magic Defense" value={magicDefense} />
+            <StatBox label="Accuracy" value={accuracy} />
+            <StatBox label="Evasion" value={evasiveness} />
+          </div>
+          <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
+            Resistances
+          </h2>
+          <div className="grid grid-cols-7 gap-1 text-center">
             <StatBox
-              key={key}
-              label={label}
-              value={elementalResistances[key]}
-              icon={<ElementIcon element={key} size={16} />}
+              label="Phys."
+              value={physicalResistance}
+              icon={<ShieldIcon className="text-muted-foreground" size={16} />}
             />
-          ))}
-        </div>
-        <h2 className="mt-4 mb-2 text-xs tracking-wider text-muted-foreground uppercase">
-          Inventory
-        </h2>
-        <ItemGroup className="md:grid md:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
-          {[0, 1, 2, 3].map((slotIndex) => {
-            const item = equippedItems[slotIndex]
-
-            return (
-              <ItemPickerDialog
-                key={slotIndex}
-                item={item}
-                searchTerm={searchTerm}
-                onSearchTermChange={setSearchTerm}
-                searchedItems={searchedItems}
-                onItemSelected={(itemKey) => setItem(slotIndex, itemKey)}
-                onItemRemoved={() => setItem(slotIndex, null)}
+            {ELEMENTS.map(({ key, label }) => (
+              <StatBox
+                key={key}
+                label={label}
+                value={elementalResistances[key]}
+                icon={<ElementIcon element={key} size={16} />}
               />
-            )
-          })}
-        </ItemGroup>
+            ))}
+          </div>
+        </div>
+        <Separator />
+        <div>
+          <h2 className="mb-2 text-xs tracking-wider text-muted-foreground uppercase">
+            Inventory
+          </h2>
+          <ItemGroup className="grid grid-cols-1 gap-2 @lg:grid-cols-2">
+            {[0, 1, 2, 3].map((slotIndex) => {
+              const item = equippedItems[slotIndex]
+
+              return (
+                <ItemPickerDialog
+                  key={slotIndex}
+                  item={item}
+                  searchTerm={searchTerm}
+                  onSearchTermChange={setSearchTerm}
+                  searchedItems={searchedItems}
+                  onItemSelected={(itemKey) => setItem(slotIndex, itemKey)}
+                  onItemRemoved={() => setItem(slotIndex, null)}
+                />
+              )
+            })}
+          </ItemGroup>
+        </div>
       </CardContent>
     </Card>
   )

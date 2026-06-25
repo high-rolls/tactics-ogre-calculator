@@ -29,7 +29,7 @@ function renderItemStats(item: EquippableItem): ReactElement | string {
     case "weapon":
       return (
         <>
-          <ItemDescription className="flex flex-row items-center gap-0.5">
+          <ItemDescription className="flex flex-row items-center gap-1">
             {isIndirectWeapon(item.category) ? (
               <BowArrowIcon size={16} />
             ) : (
@@ -98,7 +98,7 @@ export function InventoryItem({
 
   if (item === null) {
     return (
-      <Item variant="muted" asChild className="min-h-17">
+      <Item variant="muted" asChild className="min-h-17 h-full">
         <a href="#" onClick={onClick}>
           <ItemContent>
             <ItemTitle>Empty Slot</ItemTitle>
@@ -112,12 +112,12 @@ export function InventoryItem({
   }
 
   return (
-    <Item variant="outline" asChild role="listitem">
+    <Item variant="outline" asChild role="listitem" className="min-h-17 p-2 h-full">
       <a href="#" onClick={onClick}>
         <ItemIcon item={item} size={32} />
         <ItemContent>
           <ItemTitle className="gap-0.5">
-            {item.name}
+            <span>{item.name}</span>
             {item.type === "weapon" && item.element && (
               <ElementIcon element={item.element} size={16} />
             )}
@@ -146,7 +146,7 @@ export function InventoryItem({
 
         <ItemContent>
           {renderItemStats(item)}
-          <ItemDescription className="flex flex-row items-center justify-end gap-0.5">
+          <ItemDescription className="flex flex-row items-center justify-start gap-1">
             <WeightIcon size={16} />
             {item.weight}
           </ItemDescription>

@@ -46,6 +46,15 @@ export type SkillSetType =
   | "exorcist"
   | "cleric"
   | "priest"
+export type SpecialTraitType =
+  | "attack-plus"
+  | "anti-dragon"
+  | "fear"
+  | "beast-support"
+  | "giant-support"
+  | "dragon-support"
+  | "gunnery"
+  | "undead"
 export type AttackDirection = "front" | "side" | "back"
 
 export type ItemKey = (typeof ITEM_CATALOG)[number]["key"]
@@ -73,6 +82,8 @@ export interface CharacterClass {
   baseResistances: ElementalResistances
   skillSlots?: number
   skillSet?: SkillSetType
+  specialTraits?: SpecialTraitType[]
+  indirectAttack?: ItemKey
 }
 
 export interface CharacterStats {
@@ -132,6 +143,7 @@ export interface WeaponStats extends BaseItem {
   element?: ElementType
   antiDragon?: boolean
   multiplier?: number
+  roundingFunction?: (_: number) => number
 }
 
 export interface Skill {
@@ -250,6 +262,7 @@ export function isIndirectWeapon(category: WeaponCategoryType): boolean {
   return INDIRECT_WEAPON_CATEGORIES.has(category)
 }
 
+// Enriches the character stats, resolving the class and equipped items objects
 export function resolveCharacter(character: CharacterStats): ResolvedCharacter {
   const classData = Object.values(CLASS_CATALOG).find(
     (c) => c.id === character.classId
@@ -479,4 +492,43 @@ export function calculateHitChance(
         sideModifier
     )
   )
+}
+
+interface CalculateDamageProps {
+  attacker: ResolvedCharacter
+  defender: ResolvedCharacter
+  attackerCorrection: number
+  defenderCorrection: number
+  weapon: WeaponStats
+}
+
+export function calculateDamage({
+  attacker,
+  defender,
+  attackerCorrection,
+  defenderCorrection,
+  weapon,
+}: CalculateDamageProps) {
+  const attackPower = calculateAttackPower(attacker, weapon)
+  const weaponCorrection = calculateWeaponCorrection(attacker, weapon)
+  const attackCorrection = Math.max(0, Math.min(200, attackerCorrection + weaponCorrection))
+  const defensePower = calculateDefensePower(defender)
+  const defenseCorrection = Math.max(0, Math.min(200, defenderCorrection))
+  const defenderResistance = weapon?.element
+    ? calculateNetElementalResistance(defender)[weapon.element]
+    : calculatePhysicalResistance(defender)
+
+  const baseDamage = Math.trunc(
+    ((Math.trunc((attackPower * attackCorrection) / 100) -
+      Math.trunc((defensePower * defenseCorrection) / 100)) *
+      defenderResistance) /
+      100
+  )
+  const finalDamage = Math.max(
+    1,
+    Math.round(
+      (baseDamage + attacker.luck - defender.luck) * (weapon.multiplier || 1)
+    )
+  )
+  return finalDamage
 }

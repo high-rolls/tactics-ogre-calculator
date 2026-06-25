@@ -282,18 +282,18 @@ export function App() {
   )
 
   return (
-    <div className="mx-auto min-h-screen space-y-4 px-4 py-4">
-      <header className="border-b pb-4 text-center">
-        <h1 className="text-3xl font-black tracking-tight text-primary uppercase">
-          Tactics Ogre Attack Simulator
+    <div className="mx-auto min-h-screen p-2">
+      <header className="border-b pb-2 text-center">
+        <h1 className="text-xl font-black tracking-tight text-primary uppercase">
+          Tactics Ogre Calculator
         </h1>
       </header>
 
-      <main className="grid grid-cols-1 justify-items-center gap-4 lg:grid-cols-3">
-        <div className="col-span-1 space-y-4">
+      <main className="grid grid-cols-1 justify-items-center gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="@container col-span-1 w-full space-y-4">
           <Field>
-            <FieldLabel className="text-md text-sky-500">
-              Attacker ⚔️
+            <FieldLabel className="text-md mt-2 text-sky-400">
+              Attacker
             </FieldLabel>
             <div className="grid w-full grid-cols-2 gap-4">
               <Select
@@ -313,10 +313,15 @@ export function App() {
                 </SelectContent>
               </Select>
               <div className="flex w-full flex-row gap-2">
-                <Button variant="default" onClick={() => addCharacter(true)}>
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={() => addCharacter(true)}
+                >
                   Add
                 </Button>
                 <DeleteCharacterDialog
+                  buttonClass="flex-1"
                   onConfirm={() => deleteCharacter(attackerStats.id)}
                 />
               </div>
@@ -328,14 +333,17 @@ export function App() {
           />
         </div>
 
-        <div className="col-span-1 w-full space-y-4 lg:mt-6">
-          <ActionCalculatorCard attacker={equippedAttacker} defender={equippedDefender} />
+        <div className="@container col-span-1 w-full space-y-4 lg:order-3 lg:col-span-2 lg:mt-6 xl:order-0 xl:col-span-1">
+          <ActionCalculatorCard
+            attacker={equippedAttacker}
+            defender={equippedDefender}
+          />
         </div>
 
-        <div className="space-y-4 lg:col-span-1">
+        <div className="col-span-1 space-y-4 @container w-full">
           <Field>
-            <FieldLabel className="text-md text-red-500">
-              Defender 🛡️
+            <FieldLabel className="text-md mt-2 text-red-400">
+              Defender
             </FieldLabel>
             <div className="grid w-full grid-cols-2 gap-4">
               <Select
