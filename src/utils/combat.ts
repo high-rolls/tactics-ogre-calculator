@@ -83,7 +83,7 @@ export interface CharacterClass {
   skillSlots?: number
   skillSet?: SkillSetType
   specialTraits?: SpecialTraitType[]
-  indirectAttack?: ItemKey
+  indirectAttack?: ItemKey | null
 }
 
 export interface CharacterStats {
@@ -453,19 +453,20 @@ export function calculateCharacterCorrection(
 }
 
 export function calculateWeaponCorrection(
-  character: ResolvedCharacter,
+  attacker: ResolvedCharacter,
+  defender: ResolvedCharacter,
   weapon: WeaponStats
 ): number {
   const weaponElementalModifier =
     weapon?.element !== undefined
-      ? -10 * calculateElementalMatchup(weapon.element, character.element)
+      ? -10 * calculateElementalMatchup(weapon.element, attacker.element)
       : 0
 
   const preferredWeaponBonus =
-    character.class.preferredWeaponCategory === weapon?.category ? 3 : 0
+    attacker.class.preferredWeaponCategory === weapon?.category ? 3 : 0
 
-  const antiDragonBonus =
-    (character.antiDragon ? 8 : 0) + (weapon?.antiDragon ? 8 : 0)
+  const antiDragonBonus = defender.species === "dragon" ?
+    (attacker.antiDragon ? 8 : 0) + (weapon?.antiDragon ? 8 : 0) : 0
 
   return weaponElementalModifier + preferredWeaponBonus + antiDragonBonus
 }
@@ -510,7 +511,7 @@ export function calculateDamage({
   weapon,
 }: CalculateDamageProps) {
   const attackPower = calculateAttackPower(attacker, weapon)
-  const weaponCorrection = calculateWeaponCorrection(attacker, weapon)
+  const weaponCorrection = calculateWeaponCorrection(attacker, defender, weapon)
   const attackCorrection = Math.max(0, Math.min(200, attackerCorrection + weaponCorrection))
   const defensePower = calculateDefensePower(defender)
   const defenseCorrection = Math.max(0, Math.min(200, defenderCorrection))

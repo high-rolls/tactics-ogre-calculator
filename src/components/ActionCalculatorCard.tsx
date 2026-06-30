@@ -124,17 +124,20 @@ export default function ActionCalculatorCard({
     })
   }, [attacker])
 
-  const attackerIndirectWeapons = useMemo(
-    () =>
-      withDefault(
-        attacker.equippedItems.filter(
-          (item): item is WeaponStats =>
-            item?.type === "weapon" && isIndirectWeapon(item.category)
-        ),
-        ITEM_BY_KEY[attacker.class.indirectAttack || "stone"]
-      ) as WeaponStats[],
-    [attacker]
-  )
+  const attackerIndirectWeapons = useMemo(() => {
+    const weapons = attacker.equippedItems.filter(
+      (item): item is WeaponStats =>
+        item?.type === "weapon" && isIndirectWeapon(item.category)
+    )
+    if (weapons.length > 0) return weapons
+    if (attacker.class.indirectAttack) {
+      return [ITEM_BY_KEY[attacker.class.indirectAttack]] as WeaponStats[]
+    }
+    if (attacker.class.indirectAttack === null) {
+      return [] as WeaponStats[]
+    }
+    return [ITEM_BY_KEY["stone"]] as WeaponStats[]
+  }, [attacker])
 
   const attackerWeapons = useMemo(
     () => [...attackerDirectWeapons, ...attackerIndirectWeapons],
@@ -264,7 +267,6 @@ export default function ActionCalculatorCard({
             <Select
               value={defenderTerrain.name}
               onValueChange={(name) => {
-                console.log(name)
                 setDefenderTerrain(TERRAINS.find((t) => t.name === name)!)
               }}
             >
@@ -287,7 +289,7 @@ export default function ActionCalculatorCard({
           </Field>
         </div>
 
-        <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-1 @xl:grid-cols-2 gap-3 overflow-y-auto border-t pt-4 pb-0">
+        <div className="grid max-h-[60vh] scrollbar-thumb-amber-200 grid-cols-1 gap-3 overflow-y-auto border-t pt-4 pb-0 @xl:grid-cols-2">
           <div className="flex flex-col items-start gap-4">
             {attackerWeapons.map((weapon) => (
               <AttackPredictionCard

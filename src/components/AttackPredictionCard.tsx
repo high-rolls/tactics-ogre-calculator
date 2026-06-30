@@ -40,8 +40,8 @@ export function AttackPredictionCard({
   className,
 }: AttackPredictionCardProps) {
   const weaponCorrection = useMemo(
-    () => calculateWeaponCorrection(attacker, weapon),
-    [attacker, weapon]
+    () => calculateWeaponCorrection(attacker, defender, weapon),
+    [attacker, defender, weapon]
   )
 
   const attackCorrection = useMemo(
